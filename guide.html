@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ひみつQR 使い方ガイド</title>
+<style>
+  /* ========== BASE ========== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --accent: #6c5ce7;
+    --accent-light: #a29bfe;
+    --accent-bg: #f0edff;
+    --text: #2d3436;
+    --text-sub: #636e72;
+    --bg: #faf9f7;
+    --surface: #ffffff;
+    --border: #e8e6e3;
+    --success: #00b894;
+    --warn: #fdcb6e;
+    --danger: #e17055;
+    --radius: 16px;
+    --shadow: 0 4px 24px rgba(0,0,0,.06);
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP",
+                 "BIZ UDPGothic", "Meiryo", sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ========== SLIDE SYSTEM ========== */
+  .slide {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    position: relative;
+  }
+
+  .slide:nth-child(even) {
+    background: var(--surface);
+  }
+
+  .slide-inner {
+    max-width: 720px;
+    width: 100%;
+  }
+
+  /* ========== SLIDE NUM ========== */
+  .slide-num {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    font-size: 0.75rem;
+    color: var(--accent-light);
+    font-weight: 700;
+    letter-spacing: .05em;
+  }
+
+  /* ========== TYPOGRAPHY ========== */
+  .slide-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 20px;
+    line-height: 1.3;
+    letter-spacing: -.02em;
+  }
+
+  .slide-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-sub);
+    margin-bottom: 32px;
+    line-height: 1.7;
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  /* ========== HERO (Slide 1) ========== */
+  .hero {
+    text-align: center;
+    background: linear-gradient(160deg, #f0edff 0%, #faf9f7 50%, #fff0f5 100%);
+  }
+
+  .hero-icon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 16px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .hero .slide-title {
+    font-size: 2.5rem;
+  }
+
+  .hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 24px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 18px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  /* ========== FLOW SECTION ========== */
+  .flow-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .flow-header .slide-title {
+    display: inline-block;
+  }
+
+  .flow-label {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 4px 14px;
+    border-radius: 100px;
+    margin-bottom: 12px;
+    letter-spacing: .08em;
+  }
+
+  /* ========== STEP CARDS ========== */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    position: relative;
+    padding-left: 80px;
+  }
+
+  .slide:nth-child(even) .step {
+    background: var(--bg);
+  }
+
+  .step-number {
+    position: absolute;
+    left: 20px;
+    top: 22px;
+    width: 44px;
+    height: 44px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 800;
+  }
+
+  .step-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .step-desc {
+    font-size: 0.9rem;
+    color: var(--text-sub);
+    line-height: 1.6;
+  }
+
+  /* ========== MOCK UI ========== */
+  .mock-phone {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 28px;
+    padding: 20px 16px;
+    max-width: 320px;
+    margin: 0 auto 32px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.08);
+    position: relative;
+  }
+
+  .mock-phone::before {
+    content: "";
+    display: block;
+    width: 80px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 100px;
+    margin: 0 auto 14px;
+  }
+
+  .mock-field {
+    background: #f8f7f5;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    font-size: 0.82rem;
+    color: var(--text);
+    font-family: inherit;
+  }
+
+  .mock-field.filled {
+    color: var(--text);
+  }
+
+  .mock-field.placeholder {
+    color: #b2bec3;
+  }
+
+  .mock-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .mock-group {
+    margin-bottom: 12px;
+  }
+
+  .mock-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+    cursor: default;
+  }
+
+  .mock-btn.secondary {
+    background: #f8f7f5;
+    color: var(--text-sub);
+    border: 1.5px solid var(--border);
+    margin-top: 8px;
+  }
+
+  .mock-qr {
+    width: 140px;
+    height: 140px;
+    background: var(--accent-bg);
+    border-radius: 12px;
+    margin: 16px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    border: 2px dashed var(--accent-light);
+  }
+
+  .mock-header {
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .mock-success {
+    text-align: center;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent-bg), #f5f0ff);
+    border-radius: 12px;
+    margin: 12px 0;
+  }
+
+  .mock-success-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .mock-success-title {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--success);
+    margin-bottom: 8px;
+  }
+
+  .mock-success-msg {
+    font-size: 0.85rem;
+    color: var(--text);
+    line-height: 1.6;
+    white-space: pre-line;
+  }
+
+  .mock-info-block {
+    background: #f8f7f5;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border: 1px solid #f0eeeb;
+  }
+
+  .mock-info-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #b2bec3;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  .mock-info-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* ========== TWO COLUMN ========== */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  @media (max-width: 640px) {
+    .two-col {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+  }
+
+  .col-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* ========== TIPS GRID ========== */
+  .tips-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 640px) {
+    .tips-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .tip-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .slide:nth-child(even) .tip-card {
+    background: var(--bg);
+  }
+
+  .tip-icon {
+    font-size: 1.6rem;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .tip-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .tip-desc {
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    line-height: 1.5;
+  }
+
+  /* ========== SCENE CARDS ========== */
+  .scene-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .scene-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .slide:nth-child(even) .scene-item {
+    background: var(--bg);
+  }
+
+  .scene-emoji {
+    font-size: 2rem;
+    flex-shrink: 0;
+    width: 48px;
+    text-align: center;
+  }
+
+  .scene-text {
+    flex: 1;
+  }
+
+  .scene-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .scene-desc {
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    line-height: 1.5;
+  }
+
+  /* ========== CAUTION ========== */
+  .caution-box {
+    background: #fff9e6;
+    border: 1px solid rgba(253,203,110,.3);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+
+  .caution-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #856404;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .caution-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .caution-list li {
+    font-size: 0.88rem;
+    color: var(--text);
+    line-height: 1.6;
+    padding-left: 24px;
+    position: relative;
+  }
+
+  .caution-list li::before {
+    content: ">";
+    position: absolute;
+    left: 0;
+    color: #856404;
+    font-weight: 700;
+  }
+
+  /* ========== STRENGTH VISUAL ========== */
+  .strength-example {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .str-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .str-bar-track {
+    flex: 1;
+    height: 8px;
+    background: #f0eeeb;
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .str-bar-fill {
+    height: 100%;
+    border-radius: 100px;
+  }
+
+  .str-bar-fill.low { width: 30%; background: var(--danger); }
+  .str-bar-fill.med { width: 60%; background: var(--warn); }
+  .str-bar-fill.high { width: 100%; background: var(--success); }
+
+  .str-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    width: 140px;
+    flex-shrink: 0;
+  }
+
+  .str-label.low { color: var(--danger); }
+  .str-label.med { color: #856404; }
+  .str-label.high { color: var(--success); }
+
+  .str-example-text {
+    font-size: 0.75rem;
+    color: var(--text-sub);
+    width: 120px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ========== ENDING ========== */
+  .ending {
+    text-align: center;
+    background: linear-gradient(160deg, #f0edff 0%, #faf9f7 50%, #fff0f5 100%);
+  }
+
+  .ending-icon {
+    font-size: 3.5rem;
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  .ending .slide-title {
+    font-size: 2rem;
+  }
+
+  .ending-desc {
+    font-size: 1rem;
+    color: var(--text-sub);
+    margin-bottom: 32px;
+    line-height: 1.7;
+  }
+
+  .ending-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+
+  .ending-flow-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 8px 20px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  }
+
+  .ending-flow-arrow {
+    color: var(--accent-light);
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+
+  /* ========== NAV DOTS ========== */
+  .nav-bar {
+    position: fixed;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+  }
+
+  .nav-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    border: none;
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+    padding: 0;
+  }
+
+  .nav-dot:hover {
+    background: var(--accent-light);
+    transform: scale(1.3);
+  }
+
+  .nav-dot.active {
+    background: var(--accent);
+    transform: scale(1.2);
+  }
+
+  @media (max-width: 640px) {
+    .nav-bar { display: none; }
+    .slide { padding: 40px 20px; }
+    .slide-title { font-size: 1.6rem; }
+    .hero .slide-title { font-size: 2rem; }
+    .step { padding-left: 70px; }
+    .step-number { width: 38px; height: 38px; font-size: 1rem; left: 16px; top: 20px; }
+  }
+
+  /* ========== ARROW DIAGRAM ========== */
+  .arrow-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 24px 0;
+    flex-wrap: wrap;
+  }
+
+  .arrow-box {
+    background: var(--accent-bg);
+    border: 1.5px solid var(--accent-light);
+    border-radius: 12px;
+    padding: 12px 20px;
+    text-align: center;
+    min-width: 100px;
+  }
+
+  .arrow-box-icon {
+    font-size: 1.5rem;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .arrow-box-text {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .arrow-sym {
+    font-size: 1.2rem;
+    color: var(--accent-light);
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav dots -->
+<nav class="nav-bar" id="nav"></nav>
+
+<!-- ==================== SLIDE 1: HERO ==================== -->
+<section class="slide hero" id="s1">
+  <span class="slide-num">1 / 10</span>
+  <div class="slide-inner">
+    <span class="hero-icon">🔐</span>
+    <h1 class="slide-title">ひみつQR の使い方</h1>
+    <p class="slide-subtitle">
+      あいことばで開く、秘密のQRメッセージ。<br>
+      作り方と開き方をかんたんに紹介します。
+    </p>
+    <div class="hero-badges">
+      <span class="badge">🎁 プレゼント</span>
+      <span class="badge">🧩 謎解き</span>
+      <span class="badge">💜 推し活</span>
+      <span class="badge">🎉 イベント</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 2: WHAT IS ==================== -->
+<section class="slide" id="s2">
+  <span class="slide-num">2 / 10</span>
+  <div class="slide-inner">
+    <div class="slide-title">ひみつQR とは？</div>
+    <p class="slide-subtitle">
+      秘密のメッセージを「あいことば」で暗号化して、QRコードにするツールです。<br>
+      QRを読み取っても、あいことばを知らない人には中身が読めません。
+    </p>
+
+    <div class="arrow-flow">
+      <div class="arrow-box">
+        <span class="arrow-box-icon">✍️</span>
+        <span class="arrow-box-text">メッセージを書く</span>
+      </div>
+      <span class="arrow-sym">→</span>
+      <div class="arrow-box">
+        <span class="arrow-box-icon">🔑</span>
+        <span class="arrow-box-text">あいことばで暗号化</span>
+      </div>
+      <span class="arrow-sym">→</span>
+      <div class="arrow-box">
+        <span class="arrow-box-icon">📱</span>
+        <span class="arrow-box-text">QRコードを生成</span>
+      </div>
+      <span class="arrow-sym">→</span>
+      <div class="arrow-box">
+        <span class="arrow-box-icon">🎁</span>
+        <span class="arrow-box-text">相手に渡す</span>
+      </div>
+    </div>
+
+    <div class="tips-grid" style="margin-top: 32px;">
+      <div class="tip-card">
+        <span class="tip-icon">🌐</span>
+        <div class="tip-title">サーバー不要</div>
+        <div class="tip-desc">すべてブラウザ上で完結。メッセージやあいことばはどこにも保存されません。</div>
+      </div>
+      <div class="tip-card">
+        <span class="tip-icon">🔒</span>
+        <div class="tip-title">本格的な暗号化</div>
+        <div class="tip-desc">AES-256 + PBKDF2 を使用。エンタメ用途ですが、暗号処理は本格仕様です。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 3: CREATE FLOW ==================== -->
+<section class="slide" id="s3">
+  <span class="slide-num">3 / 10</span>
+  <div class="slide-inner">
+    <div class="flow-header">
+      <span class="flow-label">送る人</span>
+      <div class="slide-title">秘密QRを作る</div>
+      <p class="slide-subtitle">4つの入力だけで、暗号化されたQRコードが完成します。</p>
+    </div>
+
+    <div class="two-col">
+      <div class="mock-phone">
+        <div class="mock-header">🔐 ひみつQR</div>
+        <div class="mock-group">
+          <span class="mock-label">秘密のメッセージ</span>
+          <div class="mock-field filled">誕生日おめでとう。<br>いつもありがとう。</div>
+        </div>
+        <div class="mock-group">
+          <span class="mock-label">あいことば</span>
+          <div class="mock-field filled">●●●●●</div>
+        </div>
+        <div class="mock-group">
+          <span class="mock-label">あいことば（確認）</span>
+          <div class="mock-field filled">●●●●●</div>
+        </div>
+        <div class="mock-group">
+          <span class="mock-label">あいことばのヒント</span>
+          <div class="mock-field filled">初めて一緒に行ったカフェの名前</div>
+        </div>
+        <div class="mock-btn">秘密QRを作る</div>
+      </div>
+
+      <div class="col-text">
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-title">秘密のメッセージを書く</div>
+            <div class="step-desc">相手に届けたいメッセージを入力します。短めがおすすめです。</div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-title">あいことばを決める</div>
+            <div class="step-desc">これが「鍵」になります。2人だけが知っている言葉がベスト。確認用にもう一度入力します。</div>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-title">ヒントを書く</div>
+            <div class="step-desc">相手があいことばを思い出せるヒントを設定します。QRを読んだ人に見えるので、答えそのものは書かないこと。</div>
+          </div>
+          <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-title">「秘密QRを作る」をタップ</div>
+            <div class="step-desc">暗号化とQRコード生成が自動で行われます。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 4: OPTIONS ==================== -->
+<section class="slide" id="s4">
+  <span class="slide-num">4 / 10</span>
+  <div class="slide-inner">
+    <div class="slide-title">便利なオプション設定</div>
+    <p class="slide-subtitle">あいことばのヒント以外にも、相手が入力しやすくなる設定があります。</p>
+
+    <div class="tips-grid">
+      <div class="tip-card">
+        <span class="tip-icon">🔤</span>
+        <div class="tip-title">入力形式</div>
+        <div class="tip-desc">「カタカナのみ」「数字のみ」「英字のみ」などを指定できます。相手はどの文字種で入力すればいいかが分かります。</div>
+      </div>
+      <div class="tip-card">
+        <span class="tip-icon">🔢</span>
+        <div class="tip-title">文字数ヒント</div>
+        <div class="tip-desc">ONにすると「5文字」のようにあいことばの文字数が表示されます。便利ですが推測されやすくなる場合も。</div>
+      </div>
+      <div class="tip-card">
+        <span class="tip-icon">📊</span>
+        <div class="tip-title">安全度メーター</div>
+        <div class="tip-desc">あいことばの長さや種類から、推測されにくさを表示します。「サプライズ用途ならOK」「かなり開けにくい」などが分かります。</div>
+      </div>
+      <div class="tip-card">
+        <span class="tip-icon">👁</span>
+        <div class="tip-title">表示/非表示の切り替え</div>
+        <div class="tip-desc">あいことば入力欄の横にある目のアイコンで、入力中の文字を確認できます。</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 32px;">安全度メーターの目安</h3>
+    <div class="strength-example">
+      <div class="str-row">
+        <span class="str-example-text">「123」</span>
+        <div class="str-bar-track"><div class="str-bar-fill low"></div></div>
+        <span class="str-label low">推測されやすい</span>
+      </div>
+      <div class="str-row">
+        <span class="str-example-text">「カフェルナ」</span>
+        <div class="str-bar-track"><div class="str-bar-fill med"></div></div>
+        <span class="str-label med">サプライズ用途ならOK</span>
+      </div>
+      <div class="str-row">
+        <span class="str-example-text">「はじめてのカフェルナ」</span>
+        <div class="str-bar-track"><div class="str-bar-fill high"></div></div>
+        <span class="str-label high">かなり開けにくい</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 5: RESULT ==================== -->
+<section class="slide" id="s5">
+  <span class="slide-num">5 / 10</span>
+  <div class="slide-inner">
+    <div class="flow-header">
+      <span class="flow-label">送る人</span>
+      <div class="slide-title">QRコードができたら</div>
+      <p class="slide-subtitle">生成されたQRコードを保存して、相手に渡しましょう。</p>
+    </div>
+
+    <div class="two-col">
+      <div class="mock-phone">
+        <div style="text-align:center;">
+          <span style="font-size:1.5rem;">✨</span>
+          <div style="font-weight:800; font-size:0.95rem; margin:4px 0 8px;">秘密QRができました</div>
+        </div>
+        <div class="mock-qr">📱</div>
+        <div style="text-align:center; font-size:0.78rem; color:#636e72; margin-bottom:16px;">
+          あいことばを知っている人だけが開けます。
+        </div>
+        <div class="mock-btn">📥 QR画像を保存</div>
+        <div class="mock-btn secondary">🔗 QRのURLをコピー</div>
+        <div class="mock-btn secondary">🔓 テストで開いてみる</div>
+      </div>
+
+      <div class="col-text">
+        <div class="steps">
+          <div class="step">
+            <div class="step-number" style="background: var(--success);">A</div>
+            <div class="step-title">QR画像を保存</div>
+            <div class="step-desc">PNG画像として保存できます。LINEやメール、印刷して手渡しなど、どんな方法でも渡せます。</div>
+          </div>
+          <div class="step">
+            <div class="step-number" style="background: var(--success);">B</div>
+            <div class="step-title">URLをコピー</div>
+            <div class="step-desc">QRの中身はURL形式です。リンクをそのまま送ることもできます。</div>
+          </div>
+          <div class="step">
+            <div class="step-number" style="background: var(--success);">C</div>
+            <div class="step-title">テストで開いてみる</div>
+            <div class="step-desc">渡す前に自分で動作確認できます。正しいあいことばで開けるかチェックしましょう。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 6: OPEN FLOW ==================== -->
+<section class="slide" id="s6">
+  <span class="slide-num">6 / 10</span>
+  <div class="slide-inner">
+    <div class="flow-header">
+      <span class="flow-label">受け取る人</span>
+      <div class="slide-title">秘密のメッセージを開く</div>
+      <p class="slide-subtitle">QRコードを読み取って、あいことばを入力するだけです。</p>
+    </div>
+
+    <div class="two-col">
+      <div class="mock-phone">
+        <div style="text-align:center; margin-bottom:12px;">
+          <span style="font-size:1.8rem;">✉️</span>
+          <div style="font-weight:800; font-size:0.9rem; margin-top:4px;">秘密のメッセージが届いています</div>
+        </div>
+        <div class="mock-info-block">
+          <div class="mock-info-label">ヒント</div>
+          <div class="mock-info-value">初めて一緒に行ったカフェの名前</div>
+        </div>
+        <div class="mock-info-block">
+          <div class="mock-info-label">入力形式</div>
+          <div class="mock-info-value">カタカナのみ</div>
+        </div>
+        <div class="mock-info-block">
+          <div class="mock-info-label">文字数</div>
+          <div class="mock-info-value">5文字</div>
+        </div>
+        <div class="mock-group" style="margin-top:12px;">
+          <span class="mock-label">あいことばを入力してください</span>
+          <div class="mock-field filled" style="text-align:center; letter-spacing:.1em;">カフェルナ</div>
+        </div>
+        <div class="mock-btn">開く</div>
+      </div>
+
+      <div class="col-text">
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-title">QRコードを読み取る</div>
+            <div class="step-desc">スマホのカメラでQRを読み取るか、もらったURLをブラウザで開きます。</div>
+          </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-title">ヒントを確認する</div>
+            <div class="step-desc">ヒント、入力形式、文字数（設定されていれば）が表示されます。</div>
+          </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-title">あいことばを入力</div>
+            <div class="step-desc">ひらがな・カタカナ・大文字小文字まで正確に入力してください。</div>
+          </div>
+          <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-title">「開く」をタップ</div>
+            <div class="step-desc">正しいあいことばなら、秘密のメッセージが表示されます。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 7: SUCCESS / FAILURE ==================== -->
+<section class="slide" id="s7">
+  <span class="slide-num">7 / 10</span>
+  <div class="slide-inner">
+    <div class="slide-title">開封結果</div>
+    <p class="slide-subtitle">あいことばが合っていればメッセージが表示されます。間違っていたら何度でも再試行できます。</p>
+
+    <div class="two-col">
+      <div>
+        <h3 style="color: var(--success); text-align: center; margin-bottom: 16px;">あいことばが合っていた場合</h3>
+        <div class="mock-phone">
+          <div class="mock-success">
+            <span class="mock-success-icon">🎉</span>
+            <div class="mock-success-title">メッセージが開きました</div>
+            <div class="mock-success-msg">誕生日おめでとう。
+いつもありがとう。
+今日は思いっきり楽しもう。</div>
+          </div>
+          <div class="mock-btn" style="margin-top: 12px;">📋 コピーする</div>
+          <div class="mock-btn secondary">最初に戻る</div>
+        </div>
+      </div>
+      <div>
+        <h3 style="color: var(--danger); text-align: center; margin-bottom: 16px;">あいことばが違った場合</h3>
+        <div class="mock-phone">
+          <div style="text-align:center; padding: 20px 0;">
+            <span style="font-size:2rem; display:block; margin-bottom:8px;">🔒</span>
+            <div style="font-weight:800; font-size:0.9rem; color:var(--danger); margin-bottom:12px;">開けませんでした</div>
+            <div style="font-size:0.78rem; color:var(--text-sub); line-height:1.6;">
+              あいことばが違うか、<br>QRコードの内容が壊れている<br>可能性があります。
+            </div>
+          </div>
+          <div class="mock-btn" style="background: var(--accent);">もう一度試す</div>
+          <div class="mock-btn secondary">最初に戻る</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 8: USE CASES ==================== -->
+<section class="slide" id="s8">
+  <span class="slide-num">8 / 10</span>
+  <div class="slide-inner">
+    <div class="slide-title">こんな使い方ができます</div>
+    <p class="slide-subtitle">アイデア次第でいろいろな場面で使えます。</p>
+
+    <div class="scene-list">
+      <div class="scene-item">
+        <span class="scene-emoji">🎂</span>
+        <div class="scene-text">
+          <div class="scene-title">誕生日サプライズ</div>
+          <div class="scene-desc">バースデーカードにQRを貼って、2人だけの思い出の言葉をあいことばに。プレゼントと一緒に渡せば特別感がアップします。</div>
+        </div>
+      </div>
+      <div class="scene-item">
+        <span class="scene-emoji">🧩</span>
+        <div class="scene-text">
+          <div class="scene-title">謎解きイベント</div>
+          <div class="scene-desc">ヒントを手がかりにあいことばを推理する仕組みに。脱出ゲームや宝探しの一要素として組み込めます。</div>
+        </div>
+      </div>
+      <div class="scene-item">
+        <span class="scene-emoji">💜</span>
+        <div class="scene-text">
+          <div class="scene-title">推し活・ファン交流</div>
+          <div class="scene-desc">ファン同士で共有する「合言葉」で開くメッセージ。SNSのプロフィールや配布物にQRを載せて。</div>
+        </div>
+      </div>
+      <div class="scene-item">
+        <span class="scene-emoji">🎓</span>
+        <div class="scene-text">
+          <div class="scene-title">卒業・送別メッセージ</div>
+          <div class="scene-desc">色紙や寄せ書きに添えるシークレットメッセージ。部活の合言葉や思い出のフレーズをあいことばに。</div>
+        </div>
+      </div>
+      <div class="scene-item">
+        <span class="scene-emoji">💌</span>
+        <div class="scene-text">
+          <div class="scene-title">手紙・カードに添えて</div>
+          <div class="scene-desc">手紙に書ききれない想いをQRに。「続きはここから」と添えれば、デジタルとアナログのハイブリッドに。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 9: CAUTIONS ==================== -->
+<section class="slide" id="s9">
+  <span class="slide-num">9 / 10</span>
+  <div class="slide-inner">
+    <div class="slide-title">知っておいてほしいこと</div>
+    <p class="slide-subtitle">楽しく安心して使うためのポイントです。</p>
+
+    <div class="caution-box" style="margin-bottom: 24px;">
+      <div class="caution-title">⚠️ エンタメ用途のツールです</div>
+      <ul class="caution-list">
+        <li>医療情報、金融情報、業務機密などの重要情報には使わないでください</li>
+        <li>ヒントや入力形式はQRを読み取った人なら誰でも見えます</li>
+        <li>本文とあいことばはどこにも保存されません（忘れたら復元できません）</li>
+      </ul>
+    </div>
+
+    <div class="tips-grid">
+      <div class="tip-card">
+        <span class="tip-icon">🔑</span>
+        <div class="tip-title">あいことばは正確に</div>
+        <div class="tip-desc">「カフェルナ」と「かふぇるな」は別物です。ひらがな・カタカナ・大文字小文字・スペースの違いに注意。</div>
+      </div>
+      <div class="tip-card">
+        <span class="tip-icon">📏</span>
+        <div class="tip-title">メッセージは短めに</div>
+        <div class="tip-desc">長すぎるメッセージはQRコードが複雑になり、読み取りにくくなる場合があります。</div>
+      </div>
+      <div class="tip-card">
+        <span class="tip-icon">💡</span>
+        <div class="tip-title">ヒントに答えを書かない</div>
+        <div class="tip-desc">ヒントは誰でも見えます。あいことばそのものや、すぐ分かる手がかりは避けましょう。</div>
+      </div>
+      <div class="tip-card">
+        <span class="tip-icon">✅</span>
+        <div class="tip-title">渡す前にテスト</div>
+        <div class="tip-desc">「テストで開いてみる」ボタンで、自分のQRが正しく動くか必ず確認を。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 10: ENDING ==================== -->
+<section class="slide ending" id="s10">
+  <span class="slide-num">10 / 10</span>
+  <div class="slide-inner">
+    <span class="ending-icon">🔐</span>
+    <div class="slide-title">さあ、秘密のメッセージを届けよう</div>
+    <p class="ending-desc">
+      大切な人へのサプライズ、仲間との合言葉、イベントの仕掛け。<br>
+      あいことばでつながる特別な体験を。
+    </p>
+
+    <div class="ending-flow">
+      <div class="ending-flow-step">✍️ 書く</div>
+      <span class="ending-flow-arrow">→</span>
+      <div class="ending-flow-step">🔑 鍵をかける</div>
+      <span class="ending-flow-arrow">→</span>
+      <div class="ending-flow-step">📱 QRにする</div>
+      <span class="ending-flow-arrow">→</span>
+      <div class="ending-flow-step">🎁 届ける</div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Navigation dots
+  const slides = document.querySelectorAll('.slide');
+  const nav = document.getElementById('nav');
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'nav-dot';
+    dot.title = `スライド ${i + 1}`;
+    dot.addEventListener('click', () => {
+      slides[i].scrollIntoView({ behavior: 'smooth' });
+    });
+    nav.appendChild(dot);
+  });
+
+  const dots = nav.querySelectorAll('.nav-dot');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const idx = [...slides].indexOf(entry.target);
+        dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+      }
+    });
+  }, { threshold: 0.5 });
+
+  slides.forEach(s => observer.observe(s));
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    const active = [...dots].findIndex(d => d.classList.contains('active'));
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      const next = Math.min(active + 1, slides.length - 1);
+      slides[next].scrollIntoView({ behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const prev = Math.max(active - 1, 0);
+      slides[prev].scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+</script>
+
+</body>
+</html>
