@@ -32,9 +32,10 @@ export function CreateSecretQR({ onGenerated }: Props) {
   const errors = warnings.filter((w) => w.type === "error");
   const isValid = canCreate(message, passphrase, passphraseConfirm, format);
 
-  // メッセージ長の概算警告（暗号化+Base64+JSONオーバーヘッドで約4倍）
+  // メッセージ長の概算警告（コンパクトなバイナリ形式でURL化されるため、
+  // オーバーヘッドは約1.4倍。長文になるとQRが密になり印刷で読みにくくなる）
   const messageByteLength = new TextEncoder().encode(message).length;
-  const estimatedTooLong = messageByteLength > 600;
+  const estimatedTooLong = messageByteLength > 1000;
 
   const inputMode = inputModeForFormat(format);
 
