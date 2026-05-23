@@ -313,8 +313,11 @@ body {
 }
 
 /* あいことばの伏せ字表示。type="text" のままにすることで、
-   モバイルでも日本語IME入力を有効に保ちつつ文字を隠す。 */
-.form-input-masked {
+   モバイルでも日本語IME入力を有効に保ちつつ文字を隠す。
+   フォーカス中（入力中）は伏せ字を外す：-webkit-text-security が付いた欄を
+   iOS/Safari は「パスワード欄」とみなし「強力なパスワードを使用」を出すため、
+   入力中だけ通常のテキスト欄に戻して、その誤認とプロンプトを防ぐ。 */
+.form-input-masked:not(:focus) {
   -webkit-text-security: disc;
   text-security: disc;
 }

@@ -89,7 +89,7 @@ export function CreateSecretQR({ onGenerated }: Props) {
 
   return (
     <div className="screen create-screen">
-      <form className="card" onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
+      <form className="card" autoComplete="off" onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
         <div className="form-group">
           <label htmlFor="message" className="form-label">
             秘密のメッセージ
