@@ -9,17 +9,42 @@ import type { InputFormat } from "../types/secretPayload";
 import { StrengthMeter } from "./StrengthMeter";
 import { SafetyNotice } from "./SafetyNotice";
 
-interface Props {
-  onGenerated: (qrDataUrl: string, qrUrl: string, encodedPayload: string, lengthWarning: boolean) => void;
+/** 作成中の入力内容（結果画面から「修正」で戻ったときに復元するため） */
+export interface CreateDraft {
+  message: string;
+  passphrase: string;
+  passphraseConfirm: string;
+  hint: string;
+  format: InputFormat;
+  showLength: boolean;
 }
 
-export function CreateSecretQR({ onGenerated }: Props) {
-  const [message, setMessage] = useState("");
-  const [passphrase, setPassphrase] = useState("");
-  const [passphraseConfirm, setPassphraseConfirm] = useState("");
-  const [hint, setHint] = useState("");
-  const [format, setFormat] = useState<InputFormat>("指定なし");
-  const [showLength, setShowLength] = useState(false);
+interface Props {
+  onGenerated: (
+    qrDataUrl: string,
+    qrUrl: string,
+    encodedPayload: string,
+    lengthWarning: boolean,
+    draft: CreateDraft
+  ) => void;
+  initialDraft?: CreateDraft | null;
+}
+
+/** 例文テンプレート */
+const TEMPLATES: { label: string; text: string }[] = [
+  { label: "🎂 誕生日", text: "お誕生日おめでとう！いつもありがとう。素敵な1年になりますように。" },
+  { label: "💌 ありがとう", text: "いつも本当にありがとう。面と向かうと照れるけど、感謝してます。" },
+  { label: "🧩 謎解き", text: "正解！次のヒントは「いつも座っている席のうしろ」にあるよ。" },
+  { label: "💜 推し活", text: "ここまで見つけてくれてありがとう。あなたは本物のファンだね。" },
+];
+
+export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
+  const [message, setMessage] = useState(initialDraft?.message ?? "");
+  const [passphrase, setPassphrase] = useState(initialDraft?.passphrase ?? "");
+  const [passphraseConfirm, setPassphraseConfirm] = useState(initialDraft?.passphraseConfirm ?? "");
+  const [hint, setHint] = useState(initialDraft?.hint ?? "");
+  const [format, setFormat] = useState<InputFormat>(initialDraft?.format ?? "指定なし");
+  const [showLength, setShowLength] = useState(initialDraft?.showLength ?? false);
   const [showPassphrase, setShowPassphrase] = useState(false);
   const [showPassphraseConfirm, setShowPassphraseConfirm] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -68,14 +93,15 @@ export function CreateSecretQR({ onGenerated }: Props) {
 
       const tooLong = isQRDataTooLong(qrUrl);
       const qrDataUrl = await generateQRCodeDataUrl(qrUrl);
-      onGenerated(qrDataUrl, qrUrl, encoded, tooLong);
+      const draft: CreateDraft = { message, passphrase, passphraseConfirm, hint, format, showLength };
+      onGenerated(qrDataUrl, qrUrl, encoded, tooLong, draft);
     } catch (e) {
       setError("QRコードの生成に失敗しました。メッセージを短くしてお試しください。");
       console.error(e);
     } finally {
       setIsGenerating(false);
     }
-  }, [message, passphrase, hint, format, showLength, isValid, isGenerating, onGenerated]);
+  }, [message, passphrase, passphraseConfirm, hint, format, showLength, isValid, isGenerating, onGenerated]);
 
   const handleClear = () => {
     setMessage("");
@@ -119,6 +145,21 @@ export function CreateSecretQR({ onGenerated }: Props) {
           <div className="char-count">
             {message.length > 0 && `${message.length}文字`}
           </div>
+          {message === "" && (
+            <div className="template-chips" role="group" aria-label="例文を入れる">
+              <span className="template-chips-label">例文：</span>
+              {TEMPLATES.map((t) => (
+                <button
+                  key={t.label}
+                  type="button"
+                  className="template-chip"
+                  onClick={() => setMessage(t.text)}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          )}
           {estimatedTooLong && (
             <p id="message-length-warning" className="field-error" role="alert">
               メッセージが長めです。QRコードが読み取りにくくなる可能性があります。

@@ -210,6 +210,7 @@ export function ManualOpen({ onPayloadReady }: Props) {
       <div className="mode-switcher">
         <button
           type="button"
+          aria-pressed={mode === "scan"}
           className={`mode-btn ${mode === "scan" ? "mode-active" : ""}`}
           onClick={() => switchMode("scan")}
         >
@@ -217,6 +218,7 @@ export function ManualOpen({ onPayloadReady }: Props) {
         </button>
         <button
           type="button"
+          aria-pressed={mode === "image"}
           className={`mode-btn ${mode === "image" ? "mode-active" : ""}`}
           onClick={() => switchMode("image")}
         >
@@ -224,6 +226,7 @@ export function ManualOpen({ onPayloadReady }: Props) {
         </button>
         <button
           type="button"
+          aria-pressed={mode === "text"}
           className={`mode-btn ${mode === "text" ? "mode-active" : ""}`}
           onClick={() => switchMode("text")}
         >

@@ -3,6 +3,7 @@ import { encodedToPayload } from "./lib/encoding";
 import { isValidPayload } from "./lib/validation";
 import type { SecretPayload } from "./types/secretPayload";
 import { CreateSecretQR } from "./components/CreateSecretQR";
+import type { CreateDraft } from "./components/CreateSecretQR";
 import { QRResult } from "./components/QRResult";
 import { OpenSecretQR } from "./components/OpenSecretQR";
 
@@ -50,6 +51,8 @@ function isDirectOpen(): boolean {
 export default function App() {
   const [screen, setScreen] = useState<Screen>(getInitialScreen);
   const [cameFromQR] = useState(isDirectOpen);
+  // 直近に作成した内容（結果画面から「修正」で戻ったときに復元する。端末メモリ内のみ）
+  const [draft, setDraft] = useState<CreateDraft | null>(null);
 
   // タブの表示状態：QR読み取り経由で来た開封画面ではタブを出さない
   const showTabs = !cameFromQR || screen.type === "create" || screen.type === "manual-open" || screen.type === "result";
@@ -85,7 +88,8 @@ export default function App() {
   }, []);
 
   const handleGenerated = useCallback(
-    (qrDataUrl: string, qrUrl: string, encodedPayload: string, lengthWarning: boolean) => {
+    (qrDataUrl: string, qrUrl: string, encodedPayload: string, lengthWarning: boolean, d: CreateDraft) => {
+      setDraft(d);
       history.pushState({ screen: "result" }, "", window.location.pathname);
       setScreen({ type: "result", qrDataUrl, qrUrl, encodedPayload, lengthWarning });
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -93,7 +97,16 @@ export default function App() {
     []
   );
 
+  // 作成画面へ戻る（直近の入力内容は保持＝「修正」や「最初に戻る」で復元できる）
   const handleGoHome = useCallback(() => {
+    history.replaceState(null, "", window.location.pathname);
+    setScreen({ type: "create" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  // 最初から新しく作る（入力内容をクリア）
+  const handleReset = useCallback(() => {
+    setDraft(null);
     history.replaceState(null, "", window.location.pathname);
     setScreen({ type: "create" });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -165,7 +178,7 @@ export default function App() {
       )}
 
       {screen.type === "create" && (
-        <CreateSecretQR onGenerated={handleGenerated} />
+        <CreateSecretQR onGenerated={handleGenerated} initialDraft={draft} />
       )}
       {screen.type === "manual-open" && (
         <Suspense
@@ -186,7 +199,8 @@ export default function App() {
           qrUrl={screen.qrUrl}
           encodedPayload={screen.encodedPayload}
           lengthWarning={screen.lengthWarning}
-          onReset={handleGoHome}
+          onReset={handleReset}
+          onEdit={handleGoHome}
           onTestOpen={handleTestOpen}
         />
       )}

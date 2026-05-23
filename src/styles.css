@@ -388,6 +388,41 @@ body {
   min-height: 1.2em;
 }
 
+/* 例文テンプレートのチップ */
+.template-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.template-chips-label {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.template-chip {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
+  border: 1px solid transparent;
+  border-radius: 100px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.template-chip:hover {
+  border-color: var(--color-accent);
+}
+
+.template-chip:active {
+  transform: scale(0.96);
+}
+
 .form-note {
   font-size: 0.78rem;
   color: var(--color-text-secondary);
@@ -879,6 +914,18 @@ body {
   padding: 28px 24px;
   margin-bottom: 24px;
   border: 1px solid rgba(108, 92, 231, 0.12);
+  animation: messageReveal 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes messageReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .decrypted-message {

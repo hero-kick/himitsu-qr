@@ -1,7 +1,7 @@
-import QRCode from "qrcode";
-
 /** テキストからQRコードのDataURL（PNG）を生成 */
 export async function generateQRCodeDataUrl(text: string): Promise<string> {
+  // qrcode は生成時のみ使うため動的読み込み（初期バンドルを軽くする）
+  const QRCode = (await import("qrcode")).default;
   return QRCode.toDataURL(text, {
     errorCorrectionLevel: "M",
     margin: 2,

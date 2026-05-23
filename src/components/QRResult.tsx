@@ -6,6 +6,7 @@ interface Props {
   encodedPayload: string;
   lengthWarning: boolean;
   onReset: () => void;
+  onEdit: () => void;
   onTestOpen: () => void;
 }
 
@@ -84,7 +85,7 @@ async function saveDecoratedQR(qrDataUrl: string): Promise<void> {
   link.click();
 }
 
-export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, onReset, onTestOpen }: Props) {
+export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, onReset, onEdit, onTestOpen }: Props) {
   const [urlCopyState, setUrlCopyState] = useState<CopyState>("idle");
   const [dataCopyState, setDataCopyState] = useState<CopyState>("idle");
   const [showFallbackUrl, setShowFallbackUrl] = useState(false);
@@ -225,8 +226,11 @@ export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, onRe
           <button className="btn btn-secondary" onClick={onTestOpen}>
             🔓 テストで開いてみる
           </button>
+          <button className="btn btn-secondary" onClick={onEdit}>
+            ✏️ 内容を修正する
+          </button>
           <button className="btn btn-secondary" onClick={onReset}>
-            🔄 もう一度作る
+            🔄 最初から新しく作る
           </button>
         </div>
       </div>
