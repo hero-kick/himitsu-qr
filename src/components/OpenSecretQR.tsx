@@ -38,7 +38,7 @@ export function OpenSecretQR({ payload, onGoHome }: Props) {
   }, [passphrase, payload, phase]);
 
   const handleRetry = () => {
-    setPassphrase("");
+    // 入力はクリアしない：打ち間違いを直すだけのことが多く、全消しは手間
     setPhase("input");
   };
 

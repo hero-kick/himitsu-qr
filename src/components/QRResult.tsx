@@ -219,6 +219,9 @@ export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, onRe
 
           <hr className="divider" />
 
+          <p className="form-note" style={{ textAlign: "center", margin: "0 0 2px" }}>
+            送る前に、あいことばで開けるか確認できます👇
+          </p>
           <button className="btn btn-secondary" onClick={onTestOpen}>
             🔓 テストで開いてみる
           </button>

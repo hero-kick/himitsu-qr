@@ -87,6 +87,19 @@ export function CreateSecretQR({ onGenerated }: Props) {
     setError("");
   };
 
+  // 「作る」が押せないとき、次に何をすればよいかを案内する
+  const nextStep = !message.trim()
+    ? "秘密のメッセージを入力してください"
+    : !passphrase
+      ? "あいことばを入力してください"
+      : !passphraseConfirm
+        ? "あいことば（確認）を入力してください"
+        : passphrase !== passphraseConfirm
+          ? "あいことば（確認）が一致していません"
+          : "";
+  const showNextStep = !isValid && !isGenerating && nextStep !== "" &&
+    (message !== "" || passphrase !== "" || passphraseConfirm !== "");
+
   return (
     <div className="screen create-screen">
       <form className="card" autoComplete="off" onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
@@ -116,7 +129,7 @@ export function CreateSecretQR({ onGenerated }: Props) {
         {/* 入力形式：あいことばを入力する前に決める */}
         <div className="form-group">
           <label htmlFor="format" className="form-label">
-            あいことばの入力形式
+            あいことばの入力形式（任意）
           </label>
           <select
             id="format"
@@ -131,7 +144,7 @@ export function CreateSecretQR({ onGenerated }: Props) {
             ))}
           </select>
           <p className="form-note">
-            選んだ形式に合った文字だけを入力できます。この形式は受け取った人にヒントとして表示されます。
+            ふつうは「指定なし」のままでOK。選んだ形式に合った文字だけ入力でき、受け取った人にも表示されます。
           </p>
         </div>
 
@@ -167,6 +180,9 @@ export function CreateSecretQR({ onGenerated }: Props) {
               {showPassphrase ? "🙈" : "👁"}
             </button>
           </div>
+          <p className="form-note">
+            相手に伝える、または相手だけが知っている言葉にしましょう。
+          </p>
         </div>
 
         <div className="form-group">
@@ -218,7 +234,7 @@ export function CreateSecretQR({ onGenerated }: Props) {
 
         <div className="form-group">
           <label htmlFor="hint" className="form-label">
-            あいことばのヒント
+            あいことばのヒント（任意）
           </label>
           <input
             id="hint"
@@ -271,6 +287,10 @@ export function CreateSecretQR({ onGenerated }: Props) {
         )}
 
         {error && <p className="generation-error">{error}</p>}
+
+        {showNextStep && (
+          <p className="next-step-hint">あと一歩：{nextStep}</p>
+        )}
 
         <div className="button-group">
           <button

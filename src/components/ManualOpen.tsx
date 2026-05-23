@@ -73,20 +73,21 @@ export function ManualOpen({ onPayloadReady }: Props) {
   const [textInput, setTextInput] = useState("");
   const [error, setError] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [starting, setStarting] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // カメラスキャン開始（ボタンクリックで呼ばれる）
   const startScanner = useCallback(async () => {
-    if (scanning) return;
+    if (scanning || starting) return;
     setError("");
+    setStarting(true);
 
     try {
       // html5-qrcode はカメラ起動時のみ使うため、必要時に動的読み込み（初期バンドルを軽くする）
       const { Html5Qrcode } = await import("html5-qrcode");
       const scanner = new Html5Qrcode("qr-reader");
       scannerRef.current = scanner;
-      setScanning(true);
 
       await scanner.start(
         { facingMode: "environment" },
@@ -104,16 +105,20 @@ export function ManualOpen({ onPayloadReady }: Props) {
         },
         () => {}
       );
+      setScanning(true);
     } catch (e) {
       setScanning(false);
+      scannerRef.current = null;
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("Permission") || msg.includes("NotAllowed")) {
         setError("カメラの使用が許可されていません。ブラウザの設定を確認してください。");
       } else {
         setError("カメラを起動できませんでした。画像または貼り付けをお試しください。");
       }
+    } finally {
+      setStarting(false);
     }
-  }, [scanning, onPayloadReady]);
+  }, [scanning, starting, onPayloadReady]);
 
   // カメラスキャン停止
   const stopScanner = useCallback(() => {
@@ -180,6 +185,25 @@ export function ManualOpen({ onPayloadReady }: Props) {
     }
   };
 
+  // クリップボードから貼り付け（モバイルでの手間を減らす）
+  const canPaste =
+    typeof navigator !== "undefined" &&
+    !!navigator.clipboard &&
+    typeof navigator.clipboard.readText === "function";
+  const handlePasteFromClipboard = async () => {
+    setError("");
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text.trim()) {
+        setTextInput(text);
+      } else {
+        setError("クリップボードが空です。先にURLや暗号データをコピーしてください。");
+      }
+    } catch {
+      setError("クリップボードから読み取れませんでした。入力欄を長押しして貼り付けてください。");
+    }
+  };
+
   return (
     <div className="screen create-screen">
       {/* 入力方法の切り替え */}
@@ -215,14 +239,24 @@ export function ManualOpen({ onPayloadReady }: Props) {
               id="qr-reader"
               className="qr-scanner-container"
             />
-            {!scanning && !error && (
+            {!scanning && (
               <div className="button-group" style={{ marginTop: 12 }}>
                 <button
                   type="button"
                   className="btn btn-primary"
                   onClick={startScanner}
+                  disabled={starting}
                 >
-                  カメラを起動
+                  {starting ? (
+                    <span className="btn-loading">
+                      <span className="spinner" />
+                      起動中...
+                    </span>
+                  ) : error ? (
+                    "もう一度カメラを起動"
+                  ) : (
+                    "カメラを起動"
+                  )}
                 </button>
               </div>
             )}
@@ -260,6 +294,16 @@ export function ManualOpen({ onPayloadReady }: Props) {
             <label htmlFor="manual-data" className="form-label">
               暗号データまたはURLを貼り付け
             </label>
+            {canPaste && (
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ width: "100%", marginBottom: 10 }}
+                onClick={handlePasteFromClipboard}
+              >
+                📋 クリップボードから貼り付け
+              </button>
+            )}
             <textarea
               id="manual-data"
               className="form-textarea"
