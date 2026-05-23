@@ -1312,13 +1312,14 @@ body::before {
     padding: 8px;
   }
 
+  /* ダークモードでも白文字とのコントラストを保つため、明るくしすぎず濃いめの紫を維持 */
   .btn-primary {
-    background: linear-gradient(135deg, #7d6cf0, #a29bfe);
+    background: linear-gradient(135deg, #6c5ce7, #8170f0);
     box-shadow: 0 2px 8px rgba(162, 155, 254, 0.3);
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, #6c5ce7, #9389fb);
+    background: linear-gradient(135deg, #5b4bd6, #7060e6);
     box-shadow: 0 4px 14px rgba(162, 155, 254, 0.4);
   }
 
