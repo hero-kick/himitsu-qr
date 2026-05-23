@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface Props {
   qrDataUrl: string;
@@ -90,11 +90,33 @@ export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, onRe
   const [showFallbackUrl, setShowFallbackUrl] = useState(false);
   const [toast, setToast] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  // 画面遷移時に見出しへフォーカス（スクリーンリーダーに新画面を知らせる）
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
+
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   const showToast = (msg: string) => {
     setToast(msg);
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(""), 2000);
+  };
+
+  const handleShare = async () => {
+    try {
+      await navigator.share({
+        title: "ひみつQR",
+        text: "あいことばを知ってる人だけが開ける、ひみつのメッセージだよ🔐 開いてみて！",
+        url: qrUrl,
+      });
+    } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") return;
+      // 共有に失敗したらURLコピーにフォールバック
+      copyToClipboard(qrUrl, setUrlCopyState, "URL");
+    }
   };
 
   const copyToClipboard = async (text: string, setter: (s: CopyState) => void, label: string) => {
@@ -119,7 +141,7 @@ export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, onRe
       <div className="card result-card">
         <div className="result-header">
           <span className="result-icon">✨</span>
-          <h2 className="result-title">秘密QRができました</h2>
+          <h2 className="result-title" ref={titleRef} tabIndex={-1}>秘密QRができました</h2>
         </div>
 
         <div className="qr-container">
@@ -146,7 +168,13 @@ export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, onRe
         </div>
 
         <div className="result-actions">
-          <button className="btn btn-primary" onClick={handleSaveImage}>
+          {canShare && (
+            <button className="btn btn-primary" onClick={handleShare}>
+              📤 送る・シェアする
+            </button>
+          )}
+
+          <button className={`btn ${canShare ? "btn-outline" : "btn-primary"}`} onClick={handleSaveImage}>
             📥 QR画像を保存
           </button>
 

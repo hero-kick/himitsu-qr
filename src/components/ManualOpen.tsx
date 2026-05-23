@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Html5Qrcode } from "html5-qrcode";
-import jsQR from "jsqr";
+import type { Html5Qrcode } from "html5-qrcode";
 import { encodedToPayload } from "../lib/encoding";
 import { isValidPayload } from "../lib/validation";
 import type { SecretPayload } from "../types/secretPayload";
@@ -58,6 +57,8 @@ async function decodeQRFromImageFile(file: File): Promise<string | null> {
     ctx.drawImage(img, 0, 0, width, height);
 
     const imageData = ctx.getImageData(0, 0, width, height);
+    // jsQR は画像モードでのみ使うため、必要時に動的読み込み（初期バンドルを軽くする）
+    const jsQR = (await import("jsqr")).default;
     const result = jsQR(imageData.data, width, height, {
       inversionAttempts: "attemptBoth",
     });
@@ -81,6 +82,8 @@ export function ManualOpen({ onPayloadReady }: Props) {
     setError("");
 
     try {
+      // html5-qrcode はカメラ起動時のみ使うため、必要時に動的読み込み（初期バンドルを軽くする）
+      const { Html5Qrcode } = await import("html5-qrcode");
       const scanner = new Html5Qrcode("qr-reader");
       scannerRef.current = scanner;
       setScanning(true);

@@ -1,11 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { encodedToPayload } from "./lib/encoding";
 import { isValidPayload } from "./lib/validation";
 import type { SecretPayload } from "./types/secretPayload";
 import { CreateSecretQR } from "./components/CreateSecretQR";
 import { QRResult } from "./components/QRResult";
 import { OpenSecretQR } from "./components/OpenSecretQR";
-import { ManualOpen } from "./components/ManualOpen";
+
+// 「開く」タブはカメラ用の重いライブラリを含むため、開いたときだけ読み込む
+const ManualOpen = lazy(() =>
+  import("./components/ManualOpen").then((m) => ({ default: m.ManualOpen }))
+);
 
 type Screen =
   | { type: "create" }
@@ -164,7 +168,17 @@ export default function App() {
         <CreateSecretQR onGenerated={handleGenerated} />
       )}
       {screen.type === "manual-open" && (
-        <ManualOpen onPayloadReady={handlePayloadReady} />
+        <Suspense
+          fallback={
+            <div className="screen">
+              <div className="card" style={{ textAlign: "center" }}>
+                <span className="spinner spinner-dark" /> 読み込み中…
+              </div>
+            </div>
+          }
+        >
+          <ManualOpen onPayloadReady={handlePayloadReady} />
+        </Suspense>
       )}
       {screen.type === "result" && (
         <QRResult

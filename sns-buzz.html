@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>ひみつQR で SNS をバズらせる</title>
+<style>
+  :root {
+    --accent: #6c5ce7;
+    --accent-light: #a29bfe;
+    --accent-bg: #f0edff;
+    --buzz: #e84393;
+    --buzz-bg: #ffeef6;
+    --ink: #2d3436;
+    --muted: #636e72;
+    --line: #e8e5f5;
+    --bg1: #f4f1ff;
+    --bg2: #fff5fa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN",
+      "Hiragino Sans", Meiryo, sans-serif;
+    color: var(--ink);
+    background: linear-gradient(135deg, var(--bg1), var(--bg2));
+    overflow: hidden; -webkit-font-smoothing: antialiased;
+  }
+  .deck { position: fixed; inset: 0; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: clamp(20px, 5vw, 64px);
+    opacity: 0; visibility: hidden; transform: translateY(16px);
+    transition: opacity .45s ease, transform .45s ease; overflow-y: auto;
+  }
+  .slide.active { opacity: 1; visibility: visible; transform: none; }
+  .inner { width: 100%; max-width: 880px; margin: auto; }
+
+  .brand { position: fixed; top: 16px; left: 20px; z-index: 20; font-size: .82rem; font-weight: 700; color: var(--accent); opacity: .9; }
+  .counter { position: fixed; top: 16px; right: 20px; z-index: 20; font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .progress { position: fixed; top: 0; left: 0; height: 4px; z-index: 20; background: linear-gradient(90deg, var(--accent), var(--buzz)); width: 0; transition: width .35s ease; }
+
+  .eyebrow { display: inline-block; font-size: .82rem; font-weight: 700; letter-spacing: .06em; padding: 5px 14px; border-radius: 999px; background: var(--buzz-bg); color: var(--buzz); margin-bottom: 16px; }
+  h1 { font-size: clamp(2rem, 6vw, 3.6rem); line-height: 1.18; font-weight: 800; letter-spacing: -.01em; }
+  h2 { font-size: clamp(1.5rem, 4.4vw, 2.5rem); line-height: 1.25; font-weight: 800; letter-spacing: -.01em; }
+  .lead { font-size: clamp(1.02rem, 2.6vw, 1.3rem); color: var(--muted); line-height: 1.7; margin-top: 18px; }
+  .big-emoji { font-size: clamp(3rem, 11vw, 5.5rem); line-height: 1; margin-bottom: 10px; }
+
+  /* title */
+  .title-slide { text-align: center; }
+  .title-slide h1 .grad { background: linear-gradient(120deg, var(--accent), var(--buzz), #fd79a8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .title-slide .sub { margin-top: 22px; font-size: clamp(1rem, 2.8vw, 1.35rem); color: var(--muted); }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 28px; }
+  .pill { font-size: .92rem; font-weight: 600; padding: 8px 16px; border-radius: 999px; background: #fff; border: 1.5px solid var(--line); }
+
+  /* core: curiosity funnel */
+  .funnel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 30px; }
+  .step { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 22px 16px; text-align: center; box-shadow: 0 6px 24px rgba(108,92,231,.06); position: relative; }
+  .step .ic { font-size: 2.3rem; }
+  .step h3 { font-size: 1.04rem; margin: 8px 0 6px; }
+  .step p { font-size: .88rem; color: var(--muted); line-height: 1.5; }
+  .step:not(:last-child)::after { content: "→"; position: absolute; right: -12px; top: 50%; transform: translateY(-50%); color: var(--buzz); font-weight: 800; font-size: 1.2rem; z-index: 2; }
+
+  /* pattern card */
+  .num-tag { display: inline-flex; align-items: center; gap: 8px; }
+  .platforms { display: flex; flex-wrap: wrap; gap: 7px; margin: 4px 0 0; }
+  .plat { font-size: .74rem; font-weight: 700; padding: 4px 10px; border-radius: 8px; background: var(--accent-bg); color: var(--accent); }
+  .case-head { display: flex; align-items: center; gap: 16px; margin-top: 2px; }
+  .case-head .ic { font-size: clamp(2.4rem, 7vw, 3.2rem); line-height: 1; }
+  .scenario { font-size: clamp(1rem, 2.5vw, 1.16rem); line-height: 1.7; margin-top: 16px; }
+  .scenario b { color: var(--buzz); }
+
+  .post { margin-top: 18px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; box-shadow: 0 6px 22px rgba(232,67,147,.08); }
+  .post-top { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+  .post-top .ava { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--buzz)); display: flex; align-items: center; justify-content: center; font-size: .95rem; }
+  .post-top .handle { font-weight: 700; font-size: .9rem; }
+  .post-top .handle span { color: var(--muted); font-weight: 500; }
+  .post-body { font-size: clamp(.95rem, 2.4vw, 1.08rem); line-height: 1.65; white-space: pre-line; }
+
+  .why { margin-top: 16px; display: flex; gap: 10px; align-items: flex-start; font-size: clamp(.94rem, 2.3vw, 1.08rem); font-weight: 600; line-height: 1.6; }
+  .why .tag { flex: 0 0 auto; font-size: .72rem; font-weight: 800; padding: 4px 10px; border-radius: 8px; background: var(--buzz-bg); color: var(--buzz); margin-top: 3px; }
+
+  /* lists */
+  ul.tips { list-style: none; margin-top: 24px; display: grid; gap: 13px; }
+  ul.tips li { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; font-size: clamp(.95rem, 2.3vw, 1.1rem); line-height: 1.6; display: flex; gap: 13px; align-items: flex-start; }
+  ul.tips li .n { flex: 0 0 auto; font-size: 1.4rem; line-height: 1.25; }
+  ul.tips li b { color: var(--accent); }
+
+  .warn li { background: #fff7f4; border-color: #ffd9c9; }
+  .warn li .n { }
+
+  /* formula */
+  .formula { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; }
+  .term { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 14px 18px; text-align: center; min-width: 130px; }
+  .term .t { font-weight: 800; font-size: 1.02rem; }
+  .term .s { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+  .plus { font-size: 1.5rem; font-weight: 800; color: var(--buzz); }
+  .equals { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
+  .term.result { background: linear-gradient(120deg, var(--accent), var(--buzz)); border: none; }
+  .term.result .t, .term.result .s { color: #fff; }
+
+  .closing { text-align: center; }
+  .url-chip { display: inline-block; margin-top: 14px; font-size: clamp(1rem, 3vw, 1.4rem); font-weight: 800; color: #fff; text-decoration: none; background: linear-gradient(120deg, var(--accent), var(--buzz)); padding: 16px 30px; border-radius: 16px; box-shadow: 0 12px 30px rgba(232,67,147,.28); word-break: break-all; }
+
+  .nav-btn { position: fixed; top: 50%; transform: translateY(-50%); z-index: 20; width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer; background: rgba(255,255,255,.85); color: var(--accent); font-size: 1.4rem; box-shadow: 0 4px 16px rgba(0,0,0,.1); display: flex; align-items: center; justify-content: center; transition: transform .15s, background .15s; }
+  .nav-btn:hover { background: #fff; transform: translateY(-50%) scale(1.08); }
+  .nav-btn.prev { left: 16px; } .nav-btn.next { right: 16px; }
+  .dots { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; gap: 8px; max-width: 90vw; flex-wrap: wrap; justify-content: center; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(108,92,231,.25); border: none; cursor: pointer; padding: 0; transition: all .2s; }
+  .dot.active { background: var(--accent); transform: scale(1.35); }
+  .hint-key { position: fixed; bottom: 16px; right: 20px; z-index: 20; font-size: .74rem; color: var(--muted); opacity: .7; }
+
+  @media (max-width: 640px) {
+    .funnel { grid-template-columns: 1fr; gap: 28px; }
+    .step:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -22px; transform: translateX(50%); }
+    .nav-btn, .hint-key { display: none; }
+    .brand, .counter { font-size: .72rem; }
+  }
+</style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <div class="brand">🔐 ひみつQR</div>
+  <div class="counter"><span id="cur">1</span> / <span id="total">1</span></div>
+
+  <div class="deck" id="deck">
+
+    <!-- 1 TITLE -->
+    <section class="slide title-slide active">
+      <div class="inner">
+        <div class="big-emoji">🔥</div>
+        <h1>ひみつQR で<br><span class="grad">SNSをバズらせる</span></h1>
+        <p class="sub">「鍵のかかった箱」は、それだけで人を惹きつける。<br>拡散を生む 8つの型と、すぐ使える投稿文例。</p>
+        <div class="pill-row">
+          <span class="pill">𝕏 / Threads</span>
+          <span class="pill">Instagram</span>
+          <span class="pill">TikTok / Reels</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 CORE -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">なぜバズるのか</span>
+        <h2>「中身が見えそうで見えない」が<br>人を動かす。</h2>
+        <p class="lead">開けるには、あなたの投稿の中にある<b>あいことば</b>を探すしかない。この一手間が、そのまま“拡散の導線”になります。</p>
+        <div class="funnel">
+          <div class="step"><div class="ic">👀</div><h3>気になる</h3><p>鍵つきのQR＝カリオシティ・ギャップ。「何が入ってる？」</p></div>
+          <div class="step"><div class="ic">🔍</div><h3>探す</h3><p>合言葉を求めてプロフィール・過去投稿・動画を見る＝滞在時間↑</p></div>
+          <div class="step"><div class="ic">💬</div><h3>語る</h3><p>リプで考察、引用で自説。解けたら自慢。＝拡散</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 PATTERN 01 -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">バズの型 01</span>
+        <div class="case-head">
+          <div class="ic">🧠</div>
+          <div>
+            <h2>考察させる謎掛け</h2>
+            <div class="platforms"><span class="plat">𝕏 / Threads</span></div>
+          </div>
+        </div>
+        <p class="scenario">QR（またはURL）と一行だけ投稿。答えは<b>自分の投稿の中</b>に隠す。リプ欄が考察で埋まり、滞在時間とリプライ数が伸びてアルゴリズムに刺さる。</p>
+        <div class="post">
+          <div class="post-top"><span class="ava">🔐</span><span class="handle">あなた <span>@you</span></span></div>
+          <div class="post-body">この中に、来月の発表を隠しました🔒
+合言葉は、固定ポストのどこかにある“5文字”。
+分かった人はリプで👀</div>
+        </div>
+        <div class="why"><span class="tag">効く理由</span>低コストで参加できる（リプで一言）。引用RTで自説を語る人が連鎖する。</div>
+      </div>
+    </section>
+
+    <!-- 4 PATTERN 02 -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">バズの型 02</span>
+        <div class="case-head">
+          <div class="ic">💜</div>
+          <div>
+            <h2>「分かる人だけ」アイデンティティ型</h2>
+            <div class="platforms"><span class="plat">𝕏</span><span class="plat">Instagram</span><span class="plat">推し活・界隈</span></div>
+          </div>
+        </div>
+        <p class="scenario">合言葉を<b>本物のファンしか知らない知識</b>に。解けた人は「分かる人にしか分からんやつ…🥹」とネタバレせず投稿し、所属欲求とFOMOで人が集まる。</p>
+        <div class="post">
+          <div class="post-top"><span class="ava">🔐</span><span class="handle">あなた <span>@you</span></span></div>
+          <div class="post-body">本物の〇〇好きしか開けないメッセージ、置いときます。
+合言葉は“あの曲のラストの一節”。
+開けたら、そっと教えてね🤫</div>
+        </div>
+        <div class="why"><span class="tag">効く理由</span>「私はわかる側」と証明したい欲。界隈での共有が最も強い拡散ドライバー。</div>
+      </div>
+    </section>
+
+    <!-- 5 PATTERN 03 -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">バズの型 03</span>
+        <div class="case-head">
+          <div class="ic">🔗</div>
+          <div>
+            <h2>リレー型ARG・数珠つなぎ</h2>
+            <div class="platforms"><span class="plat">𝕏</span><span class="plat">Discord</span></div>
+          </div>
+        </div>
+        <p class="scenario">QRを複数。1つ解くと次のヒントが出る連鎖。最後に重大発表やプレゼント。<b>有志が集団で解き</b>、DiscordやXに考察が飛び交う数日間の“イベント”になる。</p>
+        <div class="post">
+          <div class="post-top"><span class="ava">🔐</span><span class="handle">あなた <span>@you</span></span></div>
+          <div class="post-body">【謎解き開幕】
+QR①を解くと②の在りかが分かる。
+全部つないだ人に、重大発表。
+#〇〇謎解き で実況してね</div>
+        </div>
+        <div class="why"><span class="tag">効く理由</span>一人では解けない設計が、コミュニティの共同作業＝持続的な盛り上がりを生む。</div>
+      </div>
+    </section>
+
+    <!-- 6 PATTERN 04 -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">バズの型 04</span>
+        <div class="case-head">
+          <div class="ic">⏳</div>
+          <div>
+            <h2>カウントダウン解禁</h2>
+            <div class="platforms"><span class="plat">𝕏</span><span class="plat">Stories</span></div>
+          </div>
+        </div>
+        <p class="scenario">合言葉を<b>未来に確定するワード</b>に（試合の勝者、新譜の曲名、発表日など）。その瞬間に全員が一斉開封し、「開けた？」会話が同時多発する。</p>
+        <div class="post">
+          <div class="post-top"><span class="ava">🔐</span><span class="handle">あなた <span>@you</span></span></div>
+          <div class="post-body">合言葉は「今夜の試合に勝ったチーム名」🏆
+勝ったら開けてね。
+何が出るかは…当日のお楽しみ。</div>
+        </div>
+        <div class="why"><span class="tag">効く理由</span>解禁の“瞬間”を作ると、タイムラインに同じ話題が一気に並ぶ。</div>
+      </div>
+    </section>
+
+    <!-- 7 PATTERN 05 -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">バズの型 05</span>
+        <div class="case-head">
+          <div class="ic">🎁</div>
+          <div>
+            <h2>参加型プレゼント企画</h2>
+            <div class="platforms"><span class="plat">𝕏</span></div>
+          </div>
+        </div>
+        <p class="scenario">合言葉が<b>本気の参加者をふるい分け</b>る。フォロー&RTを参加条件に、解けた人はDMで応募。報酬は“中身”ではなく<b>DM/フォーム応募</b>にするのがコツ。</p>
+        <div class="post">
+          <div class="post-top"><span class="ava">🔐</span><span class="handle">あなた <span>@you</span></span></div>
+          <div class="post-body">🎁プレゼント企画🎁
+①フォロー&RT
+②QRの合言葉を解く（ヒントはプロフ）
+③解けた言葉をDMで送ってね → 抽選で5名！</div>
+        </div>
+        <div class="why"><span class="tag">効く理由</span>RTで拡散しつつ、合言葉が「ちゃんと参加した人」だけに絞り込む二段構え。</div>
+      </div>
+    </section>
+
+    <!-- 8 PATTERN 06 -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">バズの型 06</span>
+        <div class="case-head">
+          <div class="ic">🎬</div>
+          <div>
+            <h2>リアクション動画の燃料</h2>
+            <div class="platforms"><span class="plat">TikTok</span><span class="plat">YouTube</span><span class="plat">𝕏</span></div>
+          </div>
+        </div>
+        <p class="scenario">「誰も解けない暗号」級の謎を用意し、<b>他人が「解いてみた」を作りたくなる</b>挑発を添える。UGCがフォロワー外まで勝手に拡散してくれる。</p>
+        <div class="post">
+          <div class="post-top"><span class="ava">🔐</span><span class="handle">あなた <span>@you</span></span></div>
+          <div class="post-body">24時間、誰も解けなかった暗号です。
+解けたら正直すごい。
+…挑戦する人いる？👇</div>
+        </div>
+        <div class="why"><span class="tag">効く理由</span>「解いてみた」動画＝他人の再生数を借りる拡散。挑発が挑戦欲を煽る。</div>
+      </div>
+    </section>
+
+    <!-- 9 PATTERN 07 -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">バズの型 07</span>
+        <div class="case-head">
+          <div class="ic">⏪</div>
+          <div>
+            <h2>「答えは動画の中」再視聴ワナ</h2>
+            <div class="platforms"><span class="plat">TikTok</span><span class="plat">Reels</span></div>
+          </div>
+        </div>
+        <p class="scenario">動画の最後にQR。「合言葉は動画のどこかに<b>一瞬だけ</b>映ってる」と仕込むと、巻き戻し・完走が増える＝TikTokで最重要の“視聴維持率”を直接稼げる。</p>
+        <div class="post">
+          <div class="post-top"><span class="ava">🔐</span><span class="handle">あなた <span>@you</span></span></div>
+          <div class="post-body">合言葉はこの動画に一瞬だけ映ってる🫢
+見つけて、最後のQRから開けてみて。
+（まばたき厳禁）</div>
+        </div>
+        <div class="why"><span class="tag">効く理由</span>巻き戻し＝完走率・再生時間が伸び、おすすめに乗りやすくなる。</div>
+      </div>
+    </section>
+
+    <!-- 10 PATTERN 08 -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">バズの型 08</span>
+        <div class="case-head">
+          <div class="ic">📍</div>
+          <div>
+            <h2>リアル × SNS連動の宝探し</h2>
+            <div class="platforms"><span class="plat">Instagram</span><span class="plat">𝕏</span></div>
+          </div>
+        </div>
+        <p class="scenario">街やイベント、店頭にQRポスターを設置。「見つけて開けた人はストーリーで教えて」で、<b>位置タグ付きのストーリー</b>が量産される現実の宝探しに。</p>
+        <div class="post">
+          <div class="post-top"><span class="ava">🔐</span><span class="handle">あなた <span>@you</span></span></div>
+          <div class="post-body">📍街のどこかにQRポスター貼りました。
+合言葉は店頭で「あいことば」と言うと教えます。
+開けた人はストーリーで自慢してね📸</div>
+        </div>
+        <div class="why"><span class="tag">効く理由</span>オフラインの発見体験がオンラインのUGC（ストーリー・位置タグ）に変換される。</div>
+      </div>
+    </section>
+
+    <!-- 11 CONSTRAINTS -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">外すと失敗するクセ</span>
+        <h2>仕掛ける前に、3つだけ。</h2>
+        <ul class="tips warn">
+          <li><span class="n">👥</span><div><b>中身は正解者“全員”が同じものを見る</b>。一人勝ちの限定コードは不向き。プレゼントは「DM/フォーム応募」にする。</div></li>
+          <li><span class="n">📢</span><div><b>答えはいずれ共有される前提</b>で。長く隠すより「<b>解けた瞬間の盛り上がり</b>」を狙う設計に。</div></li>
+          <li><span class="n">🔓</span><div><b>見られて困るものは入れない</b>（エンタメ向け）。難易度は「ヒント」の出し方で調整する。</div></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 12 FORMULA -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">バズの黄金式</span>
+        <h2>この4つが揃うと伸びる</h2>
+        <div class="formula">
+          <div class="term"><div class="t">好奇心の穴</div><div class="s">中身が気になる</div></div>
+          <div class="plus">+</div>
+          <div class="term"><div class="t">かんたん参加</div><div class="s">リプ・推測で一言</div></div>
+          <div class="plus">+</div>
+          <div class="term"><div class="t">報酬 or 所属</div><div class="s">特典・仲間意識</div></div>
+          <div class="plus">+</div>
+          <div class="term"><div class="t">語れる瞬間</div><div class="s">解けた！を共有</div></div>
+        </div>
+        <div class="formula" style="margin-top:18px;">
+          <div class="equals">＝</div>
+          <div class="term result"><div class="t">🔥 拡散</div><div class="s">考察・引用・UGCの連鎖</div></div>
+        </div>
+        <p class="lead">どの型も、この4要素のどれかを強く突いています。自分の企画に当てはめてチェックを。</p>
+      </div>
+    </section>
+
+    <!-- 13 CLOSING -->
+    <section class="slide closing">
+      <div class="inner">
+        <div class="big-emoji">🔐</div>
+        <h2>“鍵”を、あなたの<br>フォロワーに投げてみよう。</h2>
+        <p class="lead">合言葉ひとつで、ただの投稿が“参加できる体験”になる。</p>
+        <a class="url-chip" href="https://hero-kick.github.io/himitsu-qr/" target="_blank" rel="noopener">hero-kick.github.io/himitsu-qr</a>
+      </div>
+    </section>
+
+  </div>
+
+  <button class="nav-btn prev" id="prev" aria-label="前へ">‹</button>
+  <button class="nav-btn next" id="next" aria-label="次へ">›</button>
+  <div class="dots" id="dots"></div>
+  <div class="hint-key">← → / スペース / クリック で移動</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let cur = 0;
+  const dotsWrap = document.getElementById('dots');
+  const progress = document.getElementById('progress');
+  document.getElementById('total').textContent = total;
+
+  slides.forEach((_, i) => {
+    const d = document.createElement('button');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.setAttribute('aria-label', (i + 1) + '枚目へ');
+    d.addEventListener('click', () => go(i));
+    dotsWrap.appendChild(d);
+  });
+  const dots = Array.from(dotsWrap.children);
+
+  function go(n) {
+    n = Math.max(0, Math.min(total - 1, n));
+    slides[cur].classList.remove('active');
+    dots[cur].classList.remove('active');
+    cur = n;
+    slides[cur].classList.add('active');
+    dots[cur].classList.add('active');
+    document.getElementById('cur').textContent = cur + 1;
+    progress.style.width = (cur / (total - 1) * 100) + '%';
+    slides[cur].scrollTop = 0;
+  }
+  const next = () => go(cur + 1);
+  const prev = () => go(cur - 1);
+
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(total - 1);
+  });
+  document.getElementById('deck').addEventListener('click', (e) => {
+    if (e.target.closest('a, button')) return;
+    const x = e.clientX / window.innerWidth;
+    if (x < 0.3) prev(); else next();
+  });
+  let tx = 0;
+  document.addEventListener('touchstart', (e) => { tx = e.changedTouches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 50) { dx < 0 ? next() : prev(); }
+  }, { passive: true });
+  progress.style.width = '0%';
+</script>
+</body>
+</html>

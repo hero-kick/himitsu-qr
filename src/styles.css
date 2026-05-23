@@ -580,13 +580,13 @@ body {
 }
 
 .btn-primary {
-  background: var(--color-accent);
+  background: linear-gradient(135deg, #6c5ce7, #8170f0);
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(108, 92, 231, 0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #5b4bd6;
+  background: linear-gradient(135deg, #5b4bd6, #7060e6);
   box-shadow: 0 4px 14px rgba(108, 92, 231, 0.35);
 }
 
@@ -634,6 +634,14 @@ body {
 .btn-secondary .spinner {
   border-color: rgba(0, 0, 0, 0.15);
   border-top-color: var(--color-text-secondary);
+}
+
+/* 明るい背景上で使うスピナー（Suspense フォールバック等） */
+.spinner-dark {
+  border-color: rgba(108, 92, 231, 0.25);
+  border-top-color: var(--color-accent);
+  vertical-align: middle;
+  margin-right: 8px;
 }
 
 @keyframes spin {
@@ -1305,10 +1313,12 @@ body::before {
   }
 
   .btn-primary {
+    background: linear-gradient(135deg, #7d6cf0, #a29bfe);
     box-shadow: 0 2px 8px rgba(162, 155, 254, 0.3);
   }
 
   .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #6c5ce7, #9389fb);
     box-shadow: 0 4px 14px rgba(162, 155, 254, 0.4);
   }
 

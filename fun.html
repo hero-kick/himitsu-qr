@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>ひみつQR ｜ 合言葉を知ってる人だけ、開けられる。</title>
+<style>
+  :root {
+    --purple: #6c5ce7;
+    --purple-d: #5a4bd4;
+    --pink: #fd79a8;
+    --yellow: #fdcb6e;
+    --mint: #55efc4;
+    --sky: #74b9ff;
+    --ink: #2b2740;
+    --muted: #6f6b85;
+    --line: #efecfb;
+    --soft: #f7f4ff;
+    --bg: #fffdfb;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN",
+      "Hiragino Sans", Meiryo, sans-serif;
+    color: var(--ink); background: var(--bg); line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 0 22px; }
+  section { padding: clamp(52px, 8vw, 88px) 0; }
+
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; text-decoration: none; border: none; cursor: pointer; border-radius: 999px; transition: transform .15s ease, box-shadow .15s ease; }
+  .btn-primary { color: #fff; background: linear-gradient(120deg, var(--purple), var(--pink)); box-shadow: 0 10px 26px rgba(108,92,231,.32); padding: 14px 26px; }
+  .btn-primary:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 14px 32px rgba(108,92,231,.4); }
+  .btn-lg { padding: 18px 36px; font-size: 1.15rem; }
+  .btn-sm { padding: 10px 18px; font-size: .92rem; }
+
+  /* header */
+  header { position: sticky; top: 0; z-index: 50; background: rgba(255,253,251,.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 58px; }
+  .logo { font-weight: 900; font-size: 1.1rem; color: var(--purple); }
+
+  /* hero */
+  .hero { position: relative; text-align: center; overflow: hidden;
+    background:
+      radial-gradient(700px 300px at 15% 10%, rgba(253,121,168,.18), transparent 60%),
+      radial-gradient(700px 300px at 85% 20%, rgba(116,185,255,.18), transparent 60%),
+      linear-gradient(180deg, #fff, var(--soft)); }
+  .hero .emoji-pop { font-size: clamp(2.6rem, 9vw, 4rem); }
+  .hero h1 { font-size: clamp(2.2rem, 7.5vw, 4rem); line-height: 1.16; font-weight: 900; letter-spacing: -.02em; margin-top: 10px; }
+  .hero h1 .mark { background: linear-gradient(120deg, var(--purple), var(--pink)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero .sub { font-size: clamp(1.02rem, 2.7vw, 1.32rem); color: var(--muted); margin: 22px auto 0; max-width: 600px; }
+  .hero .cta-row { margin-top: 30px; }
+  .hero .tags { margin-top: 22px; display: flex; gap: 8px 14px; justify-content: center; flex-wrap: wrap; font-size: .9rem; font-weight: 700; color: var(--purple); }
+  .hero .tags span { background: #fff; border: 1.5px solid var(--line); padding: 7px 14px; border-radius: 999px; }
+  .float { position: absolute; font-size: 2rem; opacity: .8; animation: bob 4s ease-in-out infinite; }
+  .float.a { top: 16%; left: 8%; } .float.b { top: 22%; right: 9%; animation-delay: .8s; }
+  .float.c { bottom: 14%; left: 13%; animation-delay: 1.4s; } .float.d { bottom: 18%; right: 12%; animation-delay: 2s; }
+  @keyframes bob { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-12px) rotate(4deg); } }
+  @media (max-width: 640px){ .float { display: none; } }
+
+  .eyebrow { display: inline-block; font-size: .82rem; font-weight: 800; letter-spacing: .06em; color: var(--purple); background: var(--soft); padding: 6px 14px; border-radius: 999px; }
+  h2 { font-size: clamp(1.6rem, 5vw, 2.5rem); line-height: 1.3; font-weight: 900; letter-spacing: -.01em; margin-top: 14px; }
+  .center { text-align: center; }
+  .lead { font-size: clamp(1rem, 2.4vw, 1.16rem); color: var(--muted); margin-top: 12px; max-width: 640px; }
+  .center .lead { margin-left: auto; margin-right: auto; }
+
+  /* what's fun: 3 points */
+  .fun3 { margin-top: 38px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .f3 { background: #fff; border: 2px solid var(--line); border-radius: 22px; padding: 26px 20px; text-align: center; }
+  .f3 .ic { font-size: 2.6rem; }
+  .f3 h3 { margin-top: 10px; font-size: 1.1rem; }
+  .f3 p { margin-top: 8px; font-size: .94rem; color: var(--muted); }
+
+  /* streamer block */
+  .streamer { background: linear-gradient(160deg, #2b2740, #4a3d8f); color: #fff; border-radius: 0; }
+  .live-badge { display: inline-flex; align-items: center; gap: 7px; font-weight: 800; font-size: .82rem; background: rgba(255,255,255,.12); padding: 6px 14px; border-radius: 999px; }
+  .live-dot { width: 9px; height: 9px; border-radius: 50%; background: #ff5a5a; box-shadow: 0 0 0 0 rgba(255,90,90,.7); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,90,90,.6);} 70%{box-shadow:0 0 0 9px rgba(255,90,90,0);} 100%{box-shadow:0 0 0 0 rgba(255,90,90,0);} }
+  .streamer h2 { color: #fff; }
+  .streamer .lead { color: rgba(255,255,255,.82); }
+  .scards { margin-top: 36px; display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
+  .scard { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: 18px; padding: 22px; }
+  .scard .ic { font-size: 1.9rem; }
+  .scard h3 { margin-top: 8px; font-size: 1.08rem; }
+  .scard p { margin-top: 8px; font-size: .95rem; color: rgba(255,255,255,.8); }
+  .scard .ex { margin-top: 12px; font-size: .86rem; background: rgba(255,255,255,.08); border-left: 3px solid var(--pink); border-radius: 0 10px 10px 0; padding: 10px 12px; color: rgba(255,255,255,.92); }
+
+  /* everyday grid */
+  .everyday { background: linear-gradient(180deg, var(--soft), #fff); }
+  .egrid { margin-top: 38px; display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .ecard { background: #fff; border: 2px solid var(--line); border-radius: 20px; padding: 24px 20px; transition: transform .15s ease, box-shadow .15s ease; }
+  .ecard:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(108,92,231,.12); }
+  .ecard .ic { font-size: 2.3rem; }
+  .ecard h3 { margin-top: 10px; font-size: 1.08rem; }
+  .ecard p { margin-top: 8px; font-size: .92rem; color: var(--muted); line-height: 1.6; }
+  .ecard.c1 { border-color: #ffe0ec; } .ecard.c2 { border-color: #e6e0ff; } .ecard.c3 { border-color: #d9f7ee; }
+  .ecard.c4 { border-color: #dcecff; } .ecard.c5 { border-color: #fff1cc; } .ecard.c6 { border-color: #ffe0ec; }
+
+  /* steps */
+  .steps-grid { margin-top: 36px; display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; counter-reset: s; }
+  .stp { background: #fff; border: 2px solid var(--line); border-radius: 20px; padding: 28px 22px 24px; position: relative; text-align: center; }
+  .stp::before { counter-increment: s; content: counter(s); position: absolute; top: -18px; left: 50%; transform: translateX(-50%); width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(120deg, var(--purple), var(--pink)); color: #fff; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(108,92,231,.3); }
+  .stp .ic { font-size: 2rem; margin-top: 6px; }
+  .stp h3 { margin-top: 8px; font-size: 1.06rem; }
+  .stp p { margin-top: 6px; color: var(--muted); font-size: .92rem; }
+
+  /* trust light */
+  .trust .row { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 2px solid var(--line); border-radius: 999px; padding: 11px 18px; font-weight: 700; font-size: .95rem; }
+
+  /* final */
+  .final { text-align: center; background: linear-gradient(150deg, var(--purple), var(--pink)); color: #fff; }
+  .final h2 { color: #fff; }
+  .final p { margin-top: 12px; color: rgba(255,255,255,.95); font-size: clamp(1rem,2.5vw,1.2rem); }
+  .final .btn-primary { background: #fff; color: var(--purple-d); margin-top: 28px; box-shadow: 0 14px 32px rgba(0,0,0,.2); }
+  .final .url { margin-top: 16px; font-size: .9rem; color: rgba(255,255,255,.85); word-break: break-all; }
+
+  footer { background: #211e30; color: rgba(255,255,255,.6); text-align: center; padding: 30px 22px; font-size: .84rem; line-height: 1.7; }
+
+  @media (max-width: 720px) {
+    .fun3, .scards, .egrid, .steps-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="wrap nav">
+      <div class="logo">🔐 ひみつQR</div>
+      <a class="btn btn-primary btn-sm" href="https://hero-kick.github.io/himitsu-qr/" target="_blank" rel="noopener">作ってみる →</a>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <span class="float a">🔑</span><span class="float b">🤫</span><span class="float c">🎁</span><span class="float d">🔒</span>
+    <div class="wrap">
+      <div class="emoji-pop">🔐✨</div>
+      <h1>合言葉を知ってる人だけ、<br><span class="mark">開けられる。</span></h1>
+      <p class="sub">ふつうのメッセージに、ちょっとした“鍵”をかけるだけ。スキャンしても、合言葉がなきゃ読めない。それだけで、ぐっと楽しくなる。</p>
+      <div class="cta-row">
+        <a class="btn btn-primary btn-lg" href="https://hero-kick.github.io/himitsu-qr/" target="_blank" rel="noopener">無料であそんでみる →</a>
+      </div>
+      <div class="tags"><span>🆓 無料</span><span>⚡ 3分でできる</span><span>📱 アプリ不要</span><span>🙆 登録なし</span></div>
+    </div>
+  </section>
+
+  <!-- WHAT'S FUN -->
+  <section class="center">
+    <div class="wrap reveal">
+      <span class="eyebrow">なにが楽しいの？</span>
+      <h2>“秘密基地”みたいな、ワクワク。</h2>
+      <p class="lead">子どものころの「合言葉」「暗号」「宝探し」。あの感じを、スマホでかんたんに。</p>
+      <div class="fun3">
+        <div class="f3"><div class="ic">🕵️</div><h3>あけてみたい！</h3><p>鍵がかかってると、中身が気になってウズウズ。</p></div>
+        <div class="f3"><div class="ic">🤫</div><h3>分かる人だけ</h3><p>「知ってる人だけ開ける」特別感がたまらない。</p></div>
+        <div class="f3"><div class="ic">🎉</div><h3>開けた瞬間！</h3><p>合言葉が合った時のサプライズが、いちばんのごほうび。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STREAMERS -->
+  <section class="streamer">
+    <div class="wrap center reveal">
+      <span class="live-badge"><span class="live-dot"></span>配信者・実況者におすすめ</span>
+      <h2>「今日の合言葉」で、<br>視聴者と遊ぼう。</h2>
+      <p class="lead" style="margin:14px auto 0;">配信を見てくれた人だけが開ける、隠しメッセージ。リスナーとの距離がぐっと縮まります。</p>
+    </div>
+    <div class="wrap">
+      <div class="scards">
+        <div class="scard reveal">
+          <div class="ic">🎬</div>
+          <h3>今日の合言葉</h3>
+          <p>配信中に「今日の合言葉は◯◯！」と発表。概要欄のQRから、見てた人だけ隠し情報を開ける。</p>
+          <div class="ex">中身の例：「次回は土曜21時！特別ゲスト来ます🎉」</div>
+        </div>
+        <div class="scard reveal">
+          <div class="ic">❓</div>
+          <h3>配信内クイズ</h3>
+          <p>答えが配信のどこかにある問題を出題。正解＝合言葉が分かった人だけ、続きやプレゼント応募先が開く。</p>
+          <div class="ex">合言葉：配信で言ったキーワード／応募先URLを公開</div>
+        </div>
+        <div class="scard reveal">
+          <div class="ic">💬</div>
+          <h3>常連・メン限の内輪ネタ</h3>
+          <p>コミュニティでしか通じない言葉を合言葉に。分かる人だけニヤッとできる隠しメッセージ。</p>
+          <div class="ex">合言葉：いつものあのフレーズ／お礼やネタを仕込む</div>
+        </div>
+        <div class="scard reveal">
+          <div class="ic">📼</div>
+          <h3>アーカイブの隠しメッセージ</h3>
+          <p>「最後まで見てくれた人へ」。合言葉は終盤でこっそり言った一言。最後まで見る楽しみに。</p>
+          <div class="ex">中身の例：「完走ありがとう！限定壁紙どうぞ🎁」</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVERYDAY -->
+  <section class="everyday">
+    <div class="wrap center reveal">
+      <span class="eyebrow">みんなの楽しい使い方</span>
+      <h2>友達にも、推しにも、自分にも。</h2>
+      <p class="lead">ちょっとした“しかけ”で、いつものメッセージが特別になる。</p>
+    </div>
+    <div class="wrap">
+      <div class="egrid">
+        <div class="ecard c1 reveal"><div class="ic">🎂</div><h3>誕生日サプライズ</h3><p>プレゼントにQRを添えて。合言葉は二人の思い出にすると、開けた瞬間うるっと。</p></div>
+        <div class="ecard c2 reveal"><div class="ic">💌</div><h3>告白・カップルの内緒</h3><p>二人だけが知る合言葉で開く手紙。他の人には絶対読めない、特別な一通。</p></div>
+        <div class="ecard c3 reveal"><div class="ic">💜</div><h3>推し活で交換</h3><p>「本物のファンしか分からない」合言葉でメッセージ交換。界隈で盛り上がる。</p></div>
+        <div class="ecard c4 reveal"><div class="ic">🗺️</div><h3>自作の宝探し</h3><p>QRを家やパーティーに仕込んで謎解きに。解いた答えが次の合言葉、なんて連鎖も。</p></div>
+        <div class="ecard c5 reveal"><div class="ic">🧠</div><h3>「私のこと分かってる？」クイズ</h3><p>相手しか知らない答えを合言葉に。当てられたらうれしい、ちょっとしたゲーム。</p></div>
+        <div class="ecard c6 reveal"><div class="ic">😆</div><h3>友達にいたずら＆サプライズ</h3><p>LINEでQRを送りつけて「合言葉わかる？」。考えてる時間も含めて楽しい。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEPS -->
+  <section class="center">
+    <div class="wrap reveal">
+      <span class="eyebrow">作り方</span>
+      <h2>かんたん<span style="color:var(--purple)">3ステップ</span>。</h2>
+    </div>
+    <div class="wrap">
+      <div class="steps-grid">
+        <div class="stp reveal"><div class="ic">✍️</div><h3>メッセージと合言葉を入力</h3><p>伝えたいことと、あいことば。ヒントもつけられる。</p></div>
+        <div class="stp reveal"><div class="ic">📲</div><h3>QRやリンクができる</h3><p>SNSに貼っても、印刷しても、送ってもOK。</p></div>
+        <div class="stp reveal"><div class="ic">🔓</div><h3>合言葉で開封！</h3><p>相手はスキャンして合言葉を入れるだけ。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST (light) -->
+  <section class="trust center">
+    <div class="wrap reveal">
+      <span class="eyebrow">気軽に使ってね</span>
+      <h2>無料だけど、ちゃんと暗号化。</h2>
+      <p class="lead">合言葉を知らない人には、ぜったい開けません。だから安心して仕込めます。</p>
+      <div class="row">
+        <span class="chip">🔒 暗号化で守られる</span>
+        <span class="chip">🆓 ずっと無料</span>
+        <span class="chip">🙅 登録・アプリ不要</span>
+        <span class="chip">🗄️ 中身は保存されない</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL -->
+  <section class="final">
+    <div class="wrap reveal">
+      <h2>さあ、ひみつ、しかけちゃう？</h2>
+      <p>あなたのメッセージに鍵をかけて、「開けたくなる」を届けよう。</p>
+      <div><a class="btn btn-primary btn-lg" href="https://hero-kick.github.io/himitsu-qr/" target="_blank" rel="noopener">無料で作ってみる →</a></div>
+      <div class="url">https://hero-kick.github.io/himitsu-qr/</div>
+    </div>
+  </section>
+
+  <footer>
+    🔐 ひみつQR — 合言葉で開く、秘密のQRメッセージ。<br>
+    ※遊び・エンタメ向けです。パスワードや個人情報など、本当に大事な情報の保管には使わないでね。
+  </footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+</script>
+</body>
+</html>

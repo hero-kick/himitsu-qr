@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>ひみつQR ｜ "見せない"が、いちばん見られる。</title>
+<style>
+  :root {
+    --accent: #6c5ce7;
+    --accent-d: #5a4bd4;
+    --accent-light: #a29bfe;
+    --accent-bg: #f0edff;
+    --buzz: #e84393;
+    --ink: #221f33;
+    --muted: #6b6878;
+    --line: #ece9f6;
+    --bg: #ffffff;
+    --soft: #f7f5ff;
+    --gold: #f6b93b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN",
+      "Hiragino Sans", Meiryo, sans-serif;
+    color: var(--ink); background: var(--bg);
+    -webkit-font-smoothing: antialiased; line-height: 1.6;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 22px; }
+  section { padding: clamp(56px, 9vw, 100px) 0; }
+
+  /* reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  /* ===== Sticky header ===== */
+  header {
+    position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.86);
+    backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .logo { font-weight: 800; font-size: 1.12rem; color: var(--accent); letter-spacing: .01em; }
+  .logo .ic { margin-right: 4px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; font-weight: 800; cursor: pointer;
+    text-decoration: none; border: none; border-radius: 12px; transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-primary {
+    color: #fff; background: linear-gradient(120deg, var(--accent), var(--buzz));
+    padding: 12px 22px; box-shadow: 0 8px 22px rgba(108,92,231,.28);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(108,92,231,.36); }
+  .btn-sm { padding: 9px 16px; font-size: .92rem; }
+  .btn-lg { padding: 18px 34px; font-size: 1.15rem; }
+
+  /* ===== Hero ===== */
+  .hero {
+    background:
+      radial-gradient(1200px 500px at 80% -10%, rgba(232,67,147,.22), transparent 60%),
+      linear-gradient(150deg, #6c5ce7 0%, #8b5cf6 45%, #c850c0 100%);
+    color: #fff; text-align: center; position: relative; overflow: hidden;
+  }
+  .hero h1 {
+    font-size: clamp(2.4rem, 8vw, 4.6rem); line-height: 1.1; font-weight: 900; letter-spacing: -.02em;
+  }
+  .hero h1 .u { position: relative; white-space: nowrap; }
+  .hero h1 .u::after { content: ""; position: absolute; left: -2px; right: -2px; bottom: .08em; height: .26em; background: rgba(255,255,255,.28); border-radius: 4px; z-index: -1; }
+  .hero .sub { font-size: clamp(1.05rem, 2.8vw, 1.4rem); margin: 24px auto 0; max-width: 640px; color: rgba(255,255,255,.96); line-height: 1.75; }
+  .hero .cta-row { margin-top: 34px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .hero .btn-primary { background: #fff; color: var(--accent-d); box-shadow: 0 12px 30px rgba(0,0,0,.18); }
+  .hero .btn-primary:hover { box-shadow: 0 16px 36px rgba(0,0,0,.24); }
+  .badges { margin-top: 28px; display: flex; gap: 10px 18px; justify-content: center; flex-wrap: wrap; font-size: .9rem; font-weight: 600; color: rgba(255,255,255,.95); }
+  .badges span { display: inline-flex; align-items: center; gap: 6px; }
+
+  .secret-card {
+    margin: 40px auto 0; width: min(290px, 78vw); background: #fff; border-radius: 22px;
+    padding: 26px 22px; box-shadow: 0 30px 70px rgba(0,0,0,.28); color: var(--ink); text-align: left;
+    transform: rotate(-2deg);
+  }
+  .qr-mock { position: relative; width: 150px; height: 150px; margin: 0 auto; border-radius: 14px; background:
+      conic-gradient(from 0deg, #eee 25%, #fff 0 50%, #eee 0 75%, #fff 0) 0 0 / 22px 22px,
+      #fff; border: 2px solid #efefef; }
+  .qr-mock .finder { position: absolute; width: 34px; height: 34px; border: 6px solid var(--ink); border-radius: 8px; background: #fff; }
+  .qr-mock .finder.tl { top: 8px; left: 8px; } .qr-mock .finder.tr { top: 8px; right: 8px; } .qr-mock .finder.bl { bottom: 8px; left: 8px; }
+  .qr-mock .lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 3rem; backdrop-filter: blur(2px); background: rgba(255,255,255,.5); border-radius: 12px; }
+  .secret-card .label { margin-top: 16px; text-align: center; font-weight: 800; color: var(--accent); }
+  .secret-card .lock-input { margin-top: 12px; display: flex; align-items: center; gap: 8px; background: var(--soft); border: 1.5px solid var(--line); border-radius: 10px; padding: 11px 13px; color: var(--muted); font-size: .9rem; }
+
+  /* ===== generic ===== */
+  .eyebrow { display: inline-block; font-size: .82rem; font-weight: 800; letter-spacing: .08em; color: var(--accent); background: var(--accent-bg); padding: 6px 14px; border-radius: 999px; }
+  h2 { font-size: clamp(1.7rem, 5vw, 2.7rem); line-height: 1.25; font-weight: 900; letter-spacing: -.01em; margin-top: 16px; }
+  h2 .hl { color: var(--accent); }
+  .section-sub { font-size: clamp(1rem, 2.4vw, 1.18rem); color: var(--muted); margin-top: 14px; max-width: 680px; }
+  .center { text-align: center; } .center .section-sub { margin-left: auto; margin-right: auto; }
+
+  /* problem */
+  .problem { background: var(--soft); }
+  .problem h2 { max-width: 760px; }
+  .strike { color: var(--muted); }
+
+  /* big idea */
+  .idea .big-quote { font-size: clamp(1.5rem, 4.6vw, 2.6rem); font-weight: 900; line-height: 1.4; letter-spacing: -.01em; }
+  .idea .big-quote .mark { color: var(--buzz); }
+  .idea p.lead { font-size: clamp(1.02rem, 2.5vw, 1.22rem); color: var(--muted); margin-top: 22px; max-width: 720px; }
+
+  /* personas */
+  .personas { background: linear-gradient(180deg, #fff, var(--soft)); }
+  .verdict { font-size: clamp(1.3rem, 3.6vw, 2rem); font-weight: 900; margin-top: 10px; }
+  .verdict .hl { color: var(--accent); }
+  .pgrid { margin-top: 40px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .pcard { background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 26px; box-shadow: 0 10px 30px rgba(108,92,231,.07); }
+  .pcard .ic { font-size: 2.4rem; }
+  .pcard h3 { font-size: 1.18rem; margin-top: 12px; font-weight: 800; }
+  .pcard .who { font-size: .86rem; color: var(--muted); margin-top: 2px; }
+  .pcard p { margin-top: 12px; font-size: 1rem; line-height: 1.7; }
+  .pcard .gain { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; font-weight: 800; color: var(--accent); font-size: .96rem; background: var(--accent-bg); padding: 8px 14px; border-radius: 10px; }
+
+  /* steps */
+  .steps-grid { margin-top: 38px; display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; counter-reset: s; }
+  .stp { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 26px 22px; position: relative; }
+  .stp::before { counter-increment: s; content: counter(s); position: absolute; top: -16px; left: 22px; width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(120deg, var(--accent), var(--buzz)); color: #fff; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(108,92,231,.3); }
+  .stp h3 { margin-top: 12px; font-size: 1.1rem; }
+  .stp p { margin-top: 8px; color: var(--muted); font-size: .96rem; }
+
+  /* why */
+  .why { background: var(--ink); color: #fff; }
+  .why .eyebrow { background: rgba(255,255,255,.12); color: #fff; }
+  .why h2 { color: #fff; }
+  .why-grid { margin-top: 40px; display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+  .why-card { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 18px; padding: 26px; }
+  .why-card .ic { font-size: 2rem; }
+  .why-card h3 { margin-top: 12px; font-size: 1.12rem; }
+  .why-card p { margin-top: 10px; color: rgba(255,255,255,.78); font-size: .96rem; line-height: 1.7; }
+
+  /* trust */
+  .trust .tgrid { margin-top: 36px; display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+  .tcard { text-align: center; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 16px; }
+  .tcard .ic { font-size: 1.9rem; }
+  .tcard h3 { margin-top: 10px; font-size: 1rem; }
+  .tcard p { margin-top: 6px; font-size: .84rem; color: var(--muted); }
+
+  /* faq */
+  .faq { background: var(--soft); }
+  .qa { max-width: 760px; margin: 32px auto 0; display: grid; gap: 14px; }
+  details { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 4px 20px; }
+  summary { list-style: none; cursor: pointer; padding: 16px 0; font-weight: 800; font-size: 1.04rem; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "＋"; color: var(--accent); font-weight: 900; }
+  details[open] summary::after { content: "−"; }
+  .qa p { padding: 0 0 18px; color: var(--muted); line-height: 1.75; }
+
+  /* final cta */
+  .final { text-align: center; background: linear-gradient(150deg, #6c5ce7, #c850c0); color: #fff; }
+  .final h2 { color: #fff; }
+  .final p { margin-top: 14px; font-size: clamp(1rem, 2.6vw, 1.25rem); color: rgba(255,255,255,.95); }
+  .final .btn-primary { background: #fff; color: var(--accent-d); margin-top: 30px; box-shadow: 0 14px 34px rgba(0,0,0,.22); }
+  .final .url { margin-top: 18px; font-size: .92rem; color: rgba(255,255,255,.85); word-break: break-all; }
+
+  footer { background: #1a1828; color: rgba(255,255,255,.6); text-align: center; padding: 34px 22px; font-size: .85rem; line-height: 1.7; }
+  footer .note { max-width: 620px; margin: 0 auto; }
+
+  @media (max-width: 720px) {
+    .pgrid, .steps-grid, .why-grid { grid-template-columns: 1fr; }
+    .trust .tgrid { grid-template-columns: repeat(2,1fr); }
+    .nav .logo { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="wrap nav">
+      <div class="logo"><span class="ic">🔐</span>ひみつQR</div>
+      <a class="btn btn-primary btn-sm" href="https://hero-kick.github.io/himitsu-qr/" target="_blank" rel="noopener">無料で作る →</a>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <h1>“見せない”が、<br><span class="u">いちばん見られる。</span></h1>
+      <p class="sub">合言葉を知る人だけが開ける、秘密のQRメッセージ。<br>スキャンは誰でも。開封は、あなたが選んだ人だけ。</p>
+      <div class="cta-row">
+        <a class="btn btn-primary btn-lg" href="https://hero-kick.github.io/himitsu-qr/" target="_blank" rel="noopener">無料で秘密QRを作る →</a>
+      </div>
+      <div class="badges">
+        <span>✅ 完全無料</span>
+        <span>✅ 登録不要</span>
+        <span>✅ インストール不要</span>
+        <span>✅ 3分で完成</span>
+      </div>
+
+      <div class="secret-card">
+        <div class="qr-mock">
+          <span class="finder tl"></span><span class="finder tr"></span><span class="finder bl"></span>
+          <span class="lock">🔒</span>
+        </div>
+        <div class="label">あいことばで開く</div>
+        <div class="lock-input">🔑 ヒント：はじめて行った場所</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section class="problem">
+    <div class="wrap reveal">
+      <span class="eyebrow">まず、現実の話を。</span>
+      <h2>そのQRも、そのクーポンも、<br><span class="strike">もう誰も驚いてくれない。</span></h2>
+      <p class="section-sub">ありふれた情報は、見た瞬間に忘れられます。タイムラインは指一本で流れ、店頭のPOPは素通りされる。「見て」と言うほど、人は見なくなる。——足りないのは“情報”ではなく、<b>“見たくなる理由”</b>です。</p>
+    </div>
+  </section>
+
+  <!-- BIG IDEA -->
+  <section class="idea">
+    <div class="wrap reveal">
+      <span class="eyebrow">たった一つの発想転換</span>
+      <p class="big-quote" style="margin-top:18px;">人は、<span class="mark">“開かない箱”</span>を前にすると、<br>開けたくて、たまらなくなる。</p>
+      <p class="lead">ひみつQRは、あなたのメッセージに鍵をかけます。スキャンしても、<b>あいことば</b>を知らなければ中身は読めない。その小さな「もどかしさ」が、注目を集め、人を近づけ、行動させ、そして語らせる。——隠すことが、最強の宣伝になります。</p>
+    </div>
+  </section>
+
+  <!-- PERSONAS : who benefits -->
+  <section class="personas">
+    <div class="wrap center reveal">
+      <span class="eyebrow">で、誰が得をするの？</span>
+      <p class="verdict">結論：<span class="hl">人の“注目”がほしい人、すべて。</span></p>
+      <p class="section-sub">なかでも、この4タイプには効きすぎます。</p>
+    </div>
+    <div class="wrap">
+      <div class="pgrid">
+        <div class="pcard reveal">
+          <div class="ic">🏪</div>
+          <h3>集客したいお店・個人事業主</h3>
+          <div class="who">飲食店・サロン・小売・教室</div>
+          <p>「合言葉を知る常連だけ」が開ける限定クーポン。紙のクーポンと違い、来店者やLINE登録者にだけ届く。貼るだけ、無料、システム不要。</p>
+          <span class="gain">💰 リピーターと再来店が増える</span>
+        </div>
+        <div class="pcard reveal">
+          <div class="ic">📈</div>
+          <h3>伸ばしたい発信者・SNS運用</h3>
+          <div class="who">クリエイター・店舗アカウント・広報</div>
+          <p>「解けた人だけ」の謎掛けを投稿すれば、リプ欄が考察で埋まる。滞在時間とリプが伸び、アルゴリズムに刺さる。プロフィール回遊も増える。</p>
+          <span class="gain">🚀 エンゲージとフォロワーが伸びる</span>
+        </div>
+        <div class="pcard reveal">
+          <div class="ic">🎁</div>
+          <h3>驚かせたい人</h3>
+          <div class="who">ギフト・プロポーズ・推し活・記念日</div>
+          <p>二人だけの合言葉で開く手紙。サプライズプレゼントに添える一言。「開けた瞬間」そのものが、忘れられない体験になる。</p>
+          <span class="gain">💖 一生モノの“感動”が作れる</span>
+        </div>
+        <div class="pcard reveal">
+          <div class="ic">🎓</div>
+          <h3>場をつくる人</h3>
+          <div class="who">イベント主催・幹事・先生・人事</div>
+          <p>合言葉ひとつで、ただの配布物が「参加できる体験」に変わる。謎解き、研修クイズ、結婚式の演出。準備コストはほぼゼロ。</p>
+          <span class="gain">🎉 体験設計が無料でできる</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEPS -->
+  <section>
+    <div class="wrap center reveal">
+      <span class="eyebrow">むずかしさ、ゼロ</span>
+      <h2>作るのは、たった<span class="hl">3ステップ</span>。</h2>
+    </div>
+    <div class="wrap">
+      <div class="steps-grid">
+        <div class="stp reveal"><h3>メッセージと合言葉を入力</h3><p>伝えたいことと、あいことば。必要ならヒントも添えて。</p></div>
+        <div class="stp reveal"><h3>QR / リンクを受け取る</h3><p>ボタン一つで生成。印刷しても、SNSに貼っても、送ってもOK。</p></div>
+        <div class="stp reveal"><h3>相手が合言葉で開封</h3><p>スキャンして合言葉を入力するだけ。専用アプリは一切不要。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY (psychology) -->
+  <section class="why">
+    <div class="wrap center reveal">
+      <span class="eyebrow">なぜ、効くのか</span>
+      <h2>人の心は、こう動く。</h2>
+    </div>
+    <div class="wrap">
+      <div class="why-grid">
+        <div class="why-card reveal"><div class="ic">🧲</div><h3>好奇心の穴</h3><p>「見えそうで見えない」と、脳はその穴を埋めたくなる。隠すほど、知りたくなる。</p></div>
+        <div class="why-card reveal"><div class="ic">🎟️</div><h3>限定の魔力</h3><p>「自分だけ」「わかる人だけ」。特別扱いは、人を動かし、語らせる最強の動機。</p></div>
+        <div class="why-card reveal"><div class="ic">🙋</div><h3>参加の快感</h3><p>読むだけより、解いて・入れて・開ける方が記憶に残る。能動が体験に変わる。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST -->
+  <section class="trust">
+    <div class="wrap center reveal">
+      <span class="eyebrow">安心して使えます</span>
+      <h2>無料なのに、ちゃんと<span class="hl">暗号化</span>。</h2>
+      <p class="section-sub">中身はあなたの端末の中で暗号化され、合言葉を知らなければ誰にも開けません。</p>
+    </div>
+    <div class="wrap">
+      <div class="tgrid">
+        <div class="tcard reveal"><div class="ic">🔒</div><h3>端末内で暗号化</h3><p>AES方式で暗号化。合言葉が鍵。</p></div>
+        <div class="tcard reveal"><div class="ic">🗄️</div><h3>サーバーに残らない</h3><p>中身はどこにも保存されない。</p></div>
+        <div class="tcard reveal"><div class="ic">🆓</div><h3>完全無料・広告なし</h3><p>登録もインストールも不要。</p></div>
+        <div class="tcard reveal"><div class="ic">📱</div><h3>相手もアプリ不要</h3><p>QRを読んで開くだけ。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq">
+    <div class="wrap center reveal">
+      <span class="eyebrow">よくある質問</span>
+      <h2>その不安、先に解消します。</h2>
+    </div>
+    <div class="wrap">
+      <div class="qa">
+        <details class="reveal"><summary>本当に無料ですか？</summary><p>はい、完全無料です。会員登録もアプリのインストールも不要。広告もありません。今すぐブラウザで使えます。</p></details>
+        <details class="reveal"><summary>むずかしくないですか？</summary><p>メッセージと合言葉を入れるだけ。約3分でQRが完成します。スマホでもPCでもOKです。</p></details>
+        <details class="reveal"><summary>安全なの？中身を見られない？</summary><p>メッセージはあなたの端末の中で暗号化（AES）され、合言葉を知らなければ開けません。中身がサーバーに保存されることもありません。※ただし“本当に守るべき機密情報”の保管用ではなく、楽しい秘密や限定情報向けのエンタメツールです。</p></details>
+        <details class="reveal"><summary>相手に特別な準備は必要？</summary><p>不要です。QRを読み取るか、URLを開いて合言葉を入力するだけ。専用アプリはいりません。</p></details>
+        <details class="reveal"><summary>合言葉を忘れたら？</summary><p>合言葉は復元できません（だから安全です）。作るときに「ヒント」を設定しておくと、相手が思い出しやすくなります。</p></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="final">
+    <div class="wrap reveal">
+      <h2>最初の“ひみつ”を、3分で。</h2>
+      <p>あなたのメッセージに鍵をかけて、「開けたくなる体験」を届けよう。</p>
+      <div><a class="btn btn-primary btn-lg" href="https://hero-kick.github.io/himitsu-qr/" target="_blank" rel="noopener">無料で秘密QRを作る →</a></div>
+      <div class="url">https://hero-kick.github.io/himitsu-qr/</div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="note">
+      🔐 ひみつQR — 合言葉で開く、秘密のQRメッセージ。<br>
+      ※エンタメ向けツールです。パスワード本体・個人情報・業務上の機密など、本当に守るべき情報の保管には使用しないでください。
+    </div>
+  </footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+</script>
+</body>
+</html>
