@@ -54,14 +54,22 @@ export function base64UrlDecodeString(encoded: string): string {
 //   [1]       flags: bit0=showLength, bit1-3=入力形式インデックス(0-7)
 //   [2..5]    iter (uint32 LE)
 //   [6]       salt 長 (=16)
-//   [7..]     salt
+//   [7..]    salt
 //   [.]       iv 長 (=12)
 //   [.]       iv
 //   [.]       あいことば文字数（showLength のとき有効、それ以外は0）
 //   [.][.]    ヒントのバイト長 (uint16 LE)
 //   [.]       ヒント (UTF-8)
 //   [残り]    暗号文
-const FORMAT_VERSION = 1;
+//
+// レイアウト（version 2）: version 1 のヒントの直後に
+//   [.]       宛名のバイト長 (uint8)
+//   [.]       宛名 (UTF-8)
+//   [.]       差出人のバイト長 (uint8)
+//   [.]       差出人 (UTF-8)
+// を挿入したもの。既に配布済みの v1 / 旧JSON も引き続きデコードできる。
+const FORMAT_VERSION_V1 = 1;
+const FORMAT_VERSION = 2;
 const APP_DEFAULTS = {
   v: 1 as const,
   app: "himitsu-qr" as const,
@@ -69,16 +77,32 @@ const APP_DEFAULTS = {
   kdf: "PBKDF2-SHA256" as const,
 };
 
+/** UTF-8で指定バイト数に収まるよう文字列を切り詰める（多バイト文字を壊さない） */
+function encodeNameBytes(value: string | undefined, maxBytes: number): Uint8Array {
+  if (!value) return new Uint8Array(0);
+  const encoder = new TextEncoder();
+  let bytes = encoder.encode(value);
+  let chars = [...value];
+  while (bytes.length > maxBytes && chars.length > 0) {
+    chars = chars.slice(0, -1);
+    bytes = encoder.encode(chars.join(""));
+  }
+  return bytes;
+}
+
 /** SecretPayload → コンパクトな Base64URL 文字列 */
 export function payloadToEncoded(payload: SecretPayload): string {
   const salt = base64ToBytes(payload.salt);
   const iv = base64ToBytes(payload.iv);
   const ciphertext = base64ToBytes(payload.ciphertext);
   const hintBytes = new TextEncoder().encode(payload.hint);
+  const toBytes = encodeNameBytes(payload.to, 255);
+  const fromBytes = encodeNameBytes(payload.from, 255);
   const formatIdx = Math.max(0, INPUT_FORMATS.indexOf(payload.format as InputFormat));
 
   const total =
-    1 + 1 + 4 + 1 + salt.length + 1 + iv.length + 1 + 2 + hintBytes.length + ciphertext.length;
+    1 + 1 + 4 + 1 + salt.length + 1 + iv.length + 1 + 2 + hintBytes.length +
+    1 + toBytes.length + 1 + fromBytes.length + ciphertext.length;
   const out = new Uint8Array(total);
   let o = 0;
 
@@ -106,6 +130,14 @@ export function payloadToEncoded(payload: SecretPayload): string {
   out.set(hintBytes, o);
   o += hintBytes.length;
 
+  out[o++] = toBytes.length;
+  out.set(toBytes, o);
+  o += toBytes.length;
+
+  out[o++] = fromBytes.length;
+  out.set(fromBytes, o);
+  o += fromBytes.length;
+
   out.set(ciphertext, o);
 
   return bytesToBase64Url(out);
@@ -124,8 +156,9 @@ export function encodedToPayload<T>(encoded: string): T {
     return JSON.parse(json) as T;
   }
 
-  if (bytes[0] !== FORMAT_VERSION) {
-    throw new Error(`unsupported payload version: ${bytes[0]}`);
+  const version = bytes[0];
+  if (version !== FORMAT_VERSION_V1 && version !== FORMAT_VERSION) {
+    throw new Error(`unsupported payload version: ${version}`);
   }
   if (bytes.length < 9) {
     throw new Error("payload too short");
@@ -155,6 +188,18 @@ export function encodedToPayload<T>(encoded: string): T {
   const hint = new TextDecoder().decode(bytes.slice(o, o + hintLen));
   o += hintLen;
 
+  // v2 で追加された宛名・差出人（v1 にはない）
+  let to = "";
+  let from = "";
+  if (version >= 2) {
+    const toLen = bytes[o++];
+    to = new TextDecoder().decode(bytes.slice(o, o + toLen));
+    o += toLen;
+    const fromLen = bytes[o++];
+    from = new TextDecoder().decode(bytes.slice(o, o + fromLen));
+    o += fromLen;
+  }
+
   const ciphertext = bytes.slice(o);
 
   const payload: SecretPayload = {
@@ -168,6 +213,8 @@ export function encodedToPayload<T>(encoded: string): T {
     ciphertext: bytesToBase64(ciphertext),
   };
   if (showLength) payload.length = pwLen;
+  if (to) payload.to = to;
+  if (from) payload.from = from;
 
   return payload as T;
 }

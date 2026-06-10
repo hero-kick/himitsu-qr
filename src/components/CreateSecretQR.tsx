@@ -4,20 +4,11 @@ import { payloadToEncoded } from "../lib/encoding";
 import { generateQRCodeDataUrl, isQRDataTooLong } from "../lib/qr";
 import { validateInputs, canCreate } from "../lib/validation";
 import { filterToFormat, inputModeForFormat } from "../lib/passphraseFormat";
-import { INPUT_FORMATS } from "../types/secretPayload";
+import { INPUT_FORMATS, NAME_MAX_LENGTH } from "../types/secretPayload";
 import type { InputFormat } from "../types/secretPayload";
 import { StrengthMeter } from "./StrengthMeter";
 import { SafetyNotice } from "./SafetyNotice";
-
-/** 作成中の入力内容（結果画面から「修正」で戻ったときに復元するため） */
-export interface CreateDraft {
-  message: string;
-  passphrase: string;
-  passphraseConfirm: string;
-  hint: string;
-  format: InputFormat;
-  showLength: boolean;
-}
+import type { CreateDraft } from "../types/createDraft";
 
 interface Props {
   onGenerated: (
@@ -45,6 +36,8 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
   const [hint, setHint] = useState(initialDraft?.hint ?? "");
   const [format, setFormat] = useState<InputFormat>(initialDraft?.format ?? "指定なし");
   const [showLength, setShowLength] = useState(initialDraft?.showLength ?? false);
+  const [to, setTo] = useState(initialDraft?.to ?? "");
+  const [from, setFrom] = useState(initialDraft?.from ?? "");
   const [showPassphrase, setShowPassphrase] = useState(false);
   const [showPassphraseConfirm, setShowPassphraseConfirm] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -79,13 +72,13 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
     setError("");
 
     try {
-      const payload = await encryptMessage(
-        message,
-        passphrase,
+      const payload = await encryptMessage(message, passphrase, {
         hint,
         format,
-        showLength
-      );
+        showLength,
+        to,
+        from,
+      });
 
       const encoded = payloadToEncoded(payload);
       const baseUrl = window.location.origin + window.location.pathname;
@@ -93,7 +86,7 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
 
       const tooLong = isQRDataTooLong(qrUrl);
       const qrDataUrl = await generateQRCodeDataUrl(qrUrl);
-      const draft: CreateDraft = { message, passphrase, passphraseConfirm, hint, format, showLength };
+      const draft: CreateDraft = { message, passphrase, passphraseConfirm, hint, format, showLength, to, from };
       onGenerated(qrDataUrl, qrUrl, encoded, tooLong, draft);
     } catch (e) {
       setError("QRコードの生成に失敗しました。メッセージを短くしてお試しください。");
@@ -101,7 +94,7 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
     } finally {
       setIsGenerating(false);
     }
-  }, [message, passphrase, passphraseConfirm, hint, format, showLength, isValid, isGenerating, onGenerated]);
+  }, [message, passphrase, passphraseConfirm, hint, format, showLength, to, from, isValid, isGenerating, onGenerated]);
 
   const handleClear = () => {
     setMessage("");
@@ -110,12 +103,14 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
     setHint("");
     setFormat("指定なし");
     setShowLength(false);
+    setTo("");
+    setFrom("");
     setError("");
   };
 
   // 「作る」が押せないとき、次に何をすればよいかを案内する
   const nextStep = !message.trim()
-    ? "秘密のメッセージを入力してください"
+    ? "ひみつのメッセージを入力してください"
     : !passphrase
       ? "あいことばを入力してください"
       : !passphraseConfirm
@@ -129,9 +124,15 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
   return (
     <div className="screen create-screen">
       <form className="card" onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
+        {/* ステップ1：手紙を書く */}
+        <div className="step-header">
+          <span className="step-number">1</span>
+          <span className="step-title">手紙を書く</span>
+        </div>
+
         <div className="form-group">
           <label htmlFor="message" className="form-label">
-            秘密のメッセージ
+            ひみつのメッセージ
           </label>
           <textarea
             id="message"
@@ -165,6 +166,12 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
               メッセージが長めです。QRコードが読み取りにくくなる可能性があります。
             </p>
           )}
+        </div>
+
+        {/* ステップ2：あいことばで封をする */}
+        <div className="step-header">
+          <span className="step-number">2</span>
+          <span className="step-title">あいことばで封をする</span>
         </div>
 
         {/* 入力形式：あいことばを入力する前に決める */}
@@ -222,7 +229,7 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
             </button>
           </div>
           <p className="form-note">
-            相手に伝える、または相手だけが知っている言葉にしましょう。
+            ふたりだけが知っている言葉が、メッセージを開ける鍵になります。
           </p>
         </div>
 
@@ -273,9 +280,52 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
           showLength={showLength}
         />
 
+        {/* ステップ3：封筒の表書き（開封前に誰でも見られる情報） */}
+        <div className="step-header">
+          <span className="step-number">3</span>
+          <span className="step-title">封筒の表書き（任意）</span>
+        </div>
+        <p className="step-note">
+          ここに書いた内容は、QRを読み取った人なら開封前でも見られます。
+        </p>
+
+        <div className="form-row">
+          <div className="form-group form-group-half">
+            <label htmlFor="to" className="form-label">
+              宛名
+            </label>
+            <input
+              id="to"
+              type="text"
+              className="form-input"
+              placeholder="例）ゆきちゃん"
+              value={to}
+              maxLength={NAME_MAX_LENGTH}
+              onChange={(e) => setTo(e.target.value)}
+            />
+          </div>
+          <div className="form-group form-group-half">
+            <label htmlFor="from" className="form-label">
+              差出人
+            </label>
+            <input
+              id="from"
+              type="text"
+              className="form-input"
+              placeholder="例）おかあさん"
+              value={from}
+              maxLength={NAME_MAX_LENGTH}
+              onChange={(e) => setFrom(e.target.value)}
+            />
+          </div>
+        </div>
+        <p className="form-note form-note-row">
+          書いておくと「◯◯さんへ、◯◯さんから」と表示され、手紙らしくなります。
+        </p>
+
         <div className="form-group">
           <label htmlFor="hint" className="form-label">
-            あいことばのヒント（任意）
+            あいことばのヒント
           </label>
           <input
             id="hint"
@@ -285,9 +335,6 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
             value={hint}
             onChange={(e) => setHint(e.target.value)}
           />
-          <p className="form-note">
-            ヒントはQRを読み取った人なら誰でも見られます。
-          </p>
         </div>
 
         <div className="form-group">
@@ -342,10 +389,10 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
             {isGenerating ? (
               <span className="btn-loading">
                 <span className="spinner" />
-                生成中...
+                封をしています...
               </span>
             ) : (
-              "秘密QRを作る"
+              "封をして、ひみつQRを作る"
             )}
           </button>
           <button

@@ -22,9 +22,16 @@ export type SecretPayload = {
   showLength: boolean;
   /** あいことばの文字数（showLength=true のときのみ） */
   length?: number;
+  /** 宛名（封筒の表書き。開封前に表示される） */
+  to?: string;
+  /** 差出人（封筒の表書き。開封前に表示される） */
+  from?: string;
   /** Base64エンコードされた暗号文 */
   ciphertext: string;
 };
+
+/** 宛名・差出人の最大文字数 */
+export const NAME_MAX_LENGTH = 20;
 
 /** 入力形式の選択肢 */
 export const INPUT_FORMATS = [

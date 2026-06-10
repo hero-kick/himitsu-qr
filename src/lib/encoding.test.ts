@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   bytesToBase64,
   base64ToBytes,
+  bytesToBase64Url,
+  base64UrlToBytes,
   base64UrlEncodeString,
   base64UrlDecodeString,
   payloadToEncoded,
@@ -98,6 +100,42 @@ describe("payloadToEncoded / encodedToPayload", () => {
     const decoded = encodedToPayload<SecretPayload>(payloadToEncoded(payload));
     expect(decoded.hint).toBe("");
     expect(decoded.format).toBe("指定なし");
+  });
+
+  it("宛名・差出人を往復変換できる（v2）", () => {
+    const payload: SecretPayload = {
+      ...samplePayload,
+      to: "ゆきちゃん",
+      from: "おかあさん",
+    };
+    const decoded = encodedToPayload<SecretPayload>(payloadToEncoded(payload));
+    expect(decoded.to).toBe("ゆきちゃん");
+    expect(decoded.from).toBe("おかあさん");
+  });
+
+  it("宛名・差出人なしのとき to/from は付かない", () => {
+    const decoded = encodedToPayload<SecretPayload>(payloadToEncoded(samplePayload));
+    expect(decoded.to).toBeUndefined();
+    expect(decoded.from).toBeUndefined();
+  });
+
+  it("旧バイナリ形式（v1・後方互換）もデコードできる", () => {
+    // v1 で配布済みのQRを再現：v2 エンコード結果から宛名・差出人ブロックを抜き、
+    // version バイトを 1 に戻したもの
+    const encoded = payloadToEncoded(samplePayload);
+    const bytes = base64UrlToBytes(encoded);
+    const saltLen = bytes[6];
+    const ivLen = bytes[6 + 1 + saltLen];
+    const hintLenOffset = 6 + 1 + saltLen + 1 + ivLen + 1;
+    const hintLen = bytes[hintLenOffset] | (bytes[hintLenOffset + 1] << 8);
+    const namesOffset = hintLenOffset + 2 + hintLen;
+    // 宛名長(0)・差出人長(0) の 2 バイトを取り除く
+    const v1bytes = new Uint8Array(bytes.length - 2);
+    v1bytes.set(bytes.slice(0, namesOffset), 0);
+    v1bytes.set(bytes.slice(namesOffset + 2), namesOffset);
+    v1bytes[0] = 1;
+    const decoded = encodedToPayload<SecretPayload>(bytesToBase64Url(v1bytes));
+    expect(decoded).toEqual(samplePayload);
   });
 
   it("コンパクト形式は旧JSON形式より短い", () => {

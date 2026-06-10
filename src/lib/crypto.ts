@@ -38,13 +38,22 @@ async function deriveKey(
   );
 }
 
+/** 暗号化時に付与する公開メタデータ（封筒の表書き） */
+export interface EnvelopeOptions {
+  hint: string;
+  format: InputFormat;
+  showLength: boolean;
+  /** 宛名（任意） */
+  to?: string;
+  /** 差出人（任意） */
+  from?: string;
+}
+
 /** メッセージを暗号化し、SecretPayload を返す */
 export async function encryptMessage(
   message: string,
   passphrase: string,
-  hint: string,
-  format: InputFormat,
-  showLength: boolean
+  { hint, format, showLength, to, from }: EnvelopeOptions
 ): Promise<SecretPayload> {
   const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
@@ -74,6 +83,8 @@ export async function encryptMessage(
   if (showLength) {
     payload.length = [...passphrase].length; // サロゲートペア対応
   }
+  if (to?.trim()) payload.to = to.trim();
+  if (from?.trim()) payload.from = from.trim();
 
   return payload;
 }

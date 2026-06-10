@@ -3,7 +3,8 @@ import { encodedToPayload } from "./lib/encoding";
 import { isValidPayload } from "./lib/validation";
 import type { SecretPayload } from "./types/secretPayload";
 import { CreateSecretQR } from "./components/CreateSecretQR";
-import type { CreateDraft } from "./components/CreateSecretQR";
+import { EMPTY_DRAFT } from "./types/createDraft";
+import type { CreateDraft } from "./types/createDraft";
 import { QRResult } from "./components/QRResult";
 import { OpenSecretQR } from "./components/OpenSecretQR";
 
@@ -15,7 +16,7 @@ const ManualOpen = lazy(() =>
 type Screen =
   | { type: "create" }
   | { type: "manual-open" }
-  | { type: "result"; qrDataUrl: string; qrUrl: string; encodedPayload: string; lengthWarning: boolean }
+  | { type: "result"; qrDataUrl: string; qrUrl: string; encodedPayload: string; lengthWarning: boolean; to: string; from: string }
   | { type: "open"; payload: SecretPayload }
   | { type: "error" };
 
@@ -91,7 +92,7 @@ export default function App() {
     (qrDataUrl: string, qrUrl: string, encodedPayload: string, lengthWarning: boolean, d: CreateDraft) => {
       setDraft(d);
       history.pushState({ screen: "result" }, "", window.location.pathname);
-      setScreen({ type: "result", qrDataUrl, qrUrl, encodedPayload, lengthWarning });
+      setScreen({ type: "result", qrDataUrl, qrUrl, encodedPayload, lengthWarning, to: d.to, from: d.from });
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
     []
@@ -107,6 +108,14 @@ export default function App() {
   // 最初から新しく作る（入力内容をクリア）
   const handleReset = useCallback(() => {
     setDraft(null);
+    history.replaceState(null, "", window.location.pathname);
+    setScreen({ type: "create" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  // お返事を書く：宛名と差出人を入れ替えて作成画面を開く
+  const handleReply = useCallback((to: string, from: string) => {
+    setDraft({ ...EMPTY_DRAFT, to, from });
     history.replaceState(null, "", window.location.pathname);
     setScreen({ type: "create" });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -141,7 +150,12 @@ export default function App() {
             <h1 className="app-title">ひみつQR</h1>
           </div>
           <p className="app-tagline">
-            あいことばで開く、秘密のQRメッセージ。
+            ことばが、鍵になる。
+          </p>
+          <p className="app-description">
+            手紙を書いて、あいことばで封をする。
+            <br />
+            開けられるのは、あいことばを知っているあの人だけ。
           </p>
           <div className="app-usecases">
             <span className="usecase-chip">🎁 プレゼント</span>
@@ -149,9 +163,6 @@ export default function App() {
             <span className="usecase-chip">💜 推し活</span>
             <span className="usecase-chip">🎉 イベント</span>
           </div>
-          <p className="app-description">
-            QRを読み取っても、あいことばを知らないと中身は読めません。
-          </p>
         </header>
       )}
 
@@ -199,13 +210,15 @@ export default function App() {
           qrUrl={screen.qrUrl}
           encodedPayload={screen.encodedPayload}
           lengthWarning={screen.lengthWarning}
+          to={screen.to}
+          from={screen.from}
           onReset={handleReset}
           onEdit={handleGoHome}
           onTestOpen={handleTestOpen}
         />
       )}
       {screen.type === "open" && (
-        <OpenSecretQR payload={screen.payload} onGoHome={handleGoHome} />
+        <OpenSecretQR payload={screen.payload} onGoHome={handleGoHome} onReply={handleReply} />
       )}
       {screen.type === "error" && (
         <div className="screen open-screen">
@@ -230,7 +243,7 @@ export default function App() {
       )}
 
       <footer className="app-footer">
-        <p>ひみつQR — エンタメ向け秘密メッセージツール</p>
+        <p>ひみつQR — ことばが、鍵になる。</p>
       </footer>
     </div>
   );

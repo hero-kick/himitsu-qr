@@ -5,6 +5,8 @@ interface Props {
   qrUrl: string;
   encodedPayload: string;
   lengthWarning: boolean;
+  to: string;
+  from: string;
   onReset: () => void;
   onEdit: () => void;
   onTestOpen: () => void;
@@ -12,15 +14,16 @@ interface Props {
 
 type CopyState = "idle" | "copied" | "failed";
 
-/** Canvas に装飾付きQR画像を描画して返す */
-function renderDecoratedQR(qrDataUrl: string): Promise<HTMLCanvasElement> {
+/** Canvas に装飾付きQR画像を描画して返す（宛名があれば表書きとして入れる） */
+function renderDecoratedQR(qrDataUrl: string, to: string): Promise<HTMLCanvasElement> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
       const padding = 40;
+      const headerH = to ? 44 : 0;
       const footerH = 48;
       const canvasW = img.width + padding * 2;
-      const canvasH = img.height + padding * 2 + footerH;
+      const canvasH = img.height + padding * 2 + headerH + footerH;
 
       const canvas = document.createElement("canvas");
       canvas.width = canvasW;
@@ -33,21 +36,29 @@ function renderDecoratedQR(qrDataUrl: string): Promise<HTMLCanvasElement> {
       ctx.roundRect(0, 0, canvasW, canvasH, 16);
       ctx.fill();
 
+      // 宛名（表書き）
+      if (to) {
+        ctx.fillStyle = "#2d3436";
+        ctx.font = "bold 26px serif";
+        ctx.textAlign = "center";
+        ctx.fillText(`${to}さんへ`, canvasW / 2, padding + 6);
+      }
+
       // QR画像
-      ctx.drawImage(img, padding, padding);
+      ctx.drawImage(img, padding, padding + headerH);
 
       // フッターテキスト
       ctx.fillStyle = "#6c5ce7";
       ctx.font = "bold 20px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("🔐 ひみつQR", canvasW / 2, img.height + padding * 2 + 8);
+      ctx.fillText("🔐 ひみつQR", canvasW / 2, img.height + headerH + padding * 2 + 8);
 
       ctx.fillStyle = "#b2bec3";
       ctx.font = "13px sans-serif";
       ctx.fillText(
-        "あいことばで開く秘密のメッセージ",
+        "あいことばで開く、ひみつのメッセージ",
         canvasW / 2,
-        img.height + padding * 2 + 32
+        img.height + headerH + padding * 2 + 32
       );
 
       resolve(canvas);
@@ -57,8 +68,8 @@ function renderDecoratedQR(qrDataUrl: string): Promise<HTMLCanvasElement> {
 }
 
 /** 装飾付きQR画像を保存（iOS Safari 対応: Web Share API → ダウンロードリンク） */
-async function saveDecoratedQR(qrDataUrl: string): Promise<void> {
-  const canvas = await renderDecoratedQR(qrDataUrl);
+async function saveDecoratedQR(qrDataUrl: string, to: string): Promise<void> {
+  const canvas = await renderDecoratedQR(qrDataUrl, to);
 
   // Web Share API が使える場合（iOS Safari 等）はファイル共有
   if (navigator.share && navigator.canShare) {
@@ -85,7 +96,7 @@ async function saveDecoratedQR(qrDataUrl: string): Promise<void> {
   link.click();
 }
 
-export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, onReset, onEdit, onTestOpen }: Props) {
+export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, to, from, onReset, onEdit, onTestOpen }: Props) {
   const [urlCopyState, setUrlCopyState] = useState<CopyState>("idle");
   const [dataCopyState, setDataCopyState] = useState<CopyState>("idle");
   const [showFallbackUrl, setShowFallbackUrl] = useState(false);
@@ -107,10 +118,12 @@ export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, onRe
   };
 
   const handleShare = async () => {
+    const greeting = to ? `${to}さんへ。` : "";
+    const sender = from ? `${from}から、` : "";
     try {
       await navigator.share({
         title: "ひみつQR",
-        text: "あいことばを知ってる人だけが開ける、ひみつのメッセージだよ🔐 開いてみて！",
+        text: `${greeting}${sender}あいことばを知ってる人だけが開ける、ひみつのメッセージだよ🔐 開いてみて！`,
         url: qrUrl,
       });
     } catch (e) {
@@ -133,7 +146,7 @@ export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, onRe
   };
 
   const handleSaveImage = async () => {
-    await saveDecoratedQR(qrDataUrl);
+    await saveDecoratedQR(qrDataUrl, to);
     showToast("画像を保存しました");
   };
 
@@ -142,7 +155,14 @@ export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, onRe
       <div className="card result-card">
         <div className="result-header">
           <span className="result-icon">✨</span>
-          <h2 className="result-title" ref={titleRef} tabIndex={-1}>秘密QRができました</h2>
+          <h2 className="result-title" ref={titleRef} tabIndex={-1}>封ができました</h2>
+          {(to || from) && (
+            <p className="result-envelope-note">
+              {to && `${to}さんへ`}
+              {to && from && " ・ "}
+              {from && `${from}より`}
+            </p>
+          )}
         </div>
 
         <div className="qr-container">
@@ -161,10 +181,10 @@ export function QRResult({ qrDataUrl, qrUrl, encodedPayload, lengthWarning, onRe
 
         <div className="result-info">
           <p className="result-description">
-            このQRには暗号化されたメッセージが入っています。
+            このQRが、あなたの手紙の封筒です。
           </p>
           <p className="result-description">
-            あいことばを知っている人だけが開けます。
+            開けられるのは、あいことばを知っている人だけ。
           </p>
         </div>
 
