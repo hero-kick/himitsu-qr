@@ -44,6 +44,10 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
   const [formatOpen, setFormatOpen] = useState(
     (initialDraft?.format ?? "指定なし") !== "指定なし"
   );
+  // 表書き・ヒントの折りたたみ（記入済みの下書きやお返事から来たときは開いておく）
+  const [extrasOpen, setExtrasOpen] = useState(
+    Boolean(initialDraft && (initialDraft.to || initialDraft.from || initialDraft.hint || initialDraft.showLength))
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
 
@@ -241,78 +245,84 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
           showLength={showLength}
         />
 
-        {/* ステップ3：封筒の表書き（開封前に誰でも見られる情報） */}
-        <div className="step-header">
-          <span className="step-number">3</span>
-          <span className="step-title">封筒の表書き（任意）</span>
-        </div>
-        <p className="step-note">
-          ここに書いた内容は、QRを読み取った人なら開封前でも見られます。
-        </p>
+        {/* 表書き・ヒント：手紙らしくしたい人向けの任意項目。
+            SNSなどで気楽に使うときは開かなくてよいよう折りたたみに収めている */}
+        <details
+          className="advanced-settings extras-settings"
+          open={extrasOpen}
+          onToggle={(e) => setExtrasOpen(e.currentTarget.open)}
+        >
+          <summary>✉️ 表書き・ヒントをつける（任意）</summary>
+          <div className="advanced-settings-body">
+            <p className="step-note">
+              ここに書いた内容は、QRを読み取った人なら開封前でも見られます。
+            </p>
 
-        <div className="form-row">
-          <div className="form-group form-group-half">
-            <label htmlFor="to" className="form-label">
-              宛名
-            </label>
-            <input
-              id="to"
-              type="text"
-              className="form-input"
-              placeholder="例）ゆきちゃん"
-              value={to}
-              maxLength={NAME_MAX_LENGTH}
-              onChange={(e) => setTo(e.target.value)}
-            />
+            <div className="form-row">
+              <div className="form-group form-group-half">
+                <label htmlFor="to" className="form-label">
+                  宛名
+                </label>
+                <input
+                  id="to"
+                  type="text"
+                  className="form-input"
+                  placeholder="例）ゆきちゃん"
+                  value={to}
+                  maxLength={NAME_MAX_LENGTH}
+                  onChange={(e) => setTo(e.target.value)}
+                />
+              </div>
+              <div className="form-group form-group-half">
+                <label htmlFor="from" className="form-label">
+                  差出人
+                </label>
+                <input
+                  id="from"
+                  type="text"
+                  className="form-input"
+                  placeholder="例）おかあさん"
+                  value={from}
+                  maxLength={NAME_MAX_LENGTH}
+                  onChange={(e) => setFrom(e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="form-note form-note-row">
+              書いておくと「◯◯さんへ、◯◯さんから」と表示され、手紙らしくなります。
+            </p>
+
+            <div className="form-group">
+              <label htmlFor="hint" className="form-label">
+                あいことばのヒント
+              </label>
+              <input
+                id="hint"
+                type="text"
+                className="form-input"
+                placeholder="例）初めて一緒に行ったカフェの名前"
+                value={hint}
+                onChange={(e) => setHint(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-checkbox-label">
+                <input
+                  type="checkbox"
+                  className="form-checkbox"
+                  checked={showLength}
+                  onChange={(e) => setShowLength(e.target.checked)}
+                />
+                <span className="checkbox-custom" />
+                <span>文字数ヒントを表示する</span>
+              </label>
+              <p className="form-note">
+                便利ですが、推測されやすくなる場合があります。
+              </p>
+            </div>
           </div>
-          <div className="form-group form-group-half">
-            <label htmlFor="from" className="form-label">
-              差出人
-            </label>
-            <input
-              id="from"
-              type="text"
-              className="form-input"
-              placeholder="例）おかあさん"
-              value={from}
-              maxLength={NAME_MAX_LENGTH}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-          </div>
-        </div>
-        <p className="form-note form-note-row">
-          書いておくと「◯◯さんへ、◯◯さんから」と表示され、手紙らしくなります。
-        </p>
-
-        <div className="form-group">
-          <label htmlFor="hint" className="form-label">
-            あいことばのヒント
-          </label>
-          <input
-            id="hint"
-            type="text"
-            className="form-input"
-            placeholder="例）初めて一緒に行ったカフェの名前"
-            value={hint}
-            onChange={(e) => setHint(e.target.value)}
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="form-checkbox-label">
-            <input
-              type="checkbox"
-              className="form-checkbox"
-              checked={showLength}
-              onChange={(e) => setShowLength(e.target.checked)}
-            />
-            <span className="checkbox-custom" />
-            <span>文字数ヒントを表示する</span>
-          </label>
-          <p className="form-note">
-            便利ですが、推測されやすくなる場合があります。
-          </p>
-        </div>
+        </details>
 
         {/* バリデーション警告 */}
         {warnings.filter((w) => w.type !== "error").length > 0 && (
