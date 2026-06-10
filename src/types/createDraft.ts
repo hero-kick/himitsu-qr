@@ -4,7 +4,6 @@ import type { InputFormat } from "./secretPayload";
 export interface CreateDraft {
   message: string;
   passphrase: string;
-  passphraseConfirm: string;
   hint: string;
   format: InputFormat;
   showLength: boolean;
@@ -15,7 +14,6 @@ export interface CreateDraft {
 export const EMPTY_DRAFT: CreateDraft = {
   message: "",
   passphrase: "",
-  passphraseConfirm: "",
   hint: "",
   format: "指定なし",
   showLength: false,

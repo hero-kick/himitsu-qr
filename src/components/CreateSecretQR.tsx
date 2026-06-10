@@ -32,23 +32,27 @@ const TEMPLATES: { label: string; text: string }[] = [
 export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
   const [message, setMessage] = useState(initialDraft?.message ?? "");
   const [passphrase, setPassphrase] = useState(initialDraft?.passphrase ?? "");
-  const [passphraseConfirm, setPassphraseConfirm] = useState(initialDraft?.passphraseConfirm ?? "");
   const [hint, setHint] = useState(initialDraft?.hint ?? "");
   const [format, setFormat] = useState<InputFormat>(initialDraft?.format ?? "指定なし");
   const [showLength, setShowLength] = useState(initialDraft?.showLength ?? false);
   const [to, setTo] = useState(initialDraft?.to ?? "");
   const [from, setFrom] = useState(initialDraft?.from ?? "");
-  const [showPassphrase, setShowPassphrase] = useState(false);
-  const [showPassphraseConfirm, setShowPassphraseConfirm] = useState(false);
+  // あいことばは最初から表示する：すぐ上の欄でメッセージ自体が見えているので、
+  // ここだけ伏せ字にする意味は薄く、見えていれば確認入力も不要になる
+  const [showPassphrase, setShowPassphrase] = useState(true);
+  // 形式指定の折りたたみ（形式が指定済みの下書きから戻ったときは開いておく）
+  const [formatOpen, setFormatOpen] = useState(
+    (initialDraft?.format ?? "指定なし") !== "指定なし"
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
 
   // 日本語IME変換中フラグ：変換確定前に文字を間引かないようにする
   const composingRef = useRef(false);
 
-  const warnings = validateInputs(message, passphrase, passphraseConfirm, hint, format);
+  const warnings = validateInputs(message, passphrase, hint, format);
   const errors = warnings.filter((w) => w.type === "error");
-  const isValid = canCreate(message, passphrase, passphraseConfirm, format);
+  const isValid = canCreate(message, passphrase, format);
 
   // メッセージ長の概算警告（コンパクトなバイナリ形式でURL化されるため、
   // オーバーヘッドは約1.4倍。長文になるとQRが密になり印刷で読みにくくなる）
@@ -60,9 +64,6 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
   // あいことば入力：IME変換中は素通し、確定後は形式に合わない文字を除去
   const handlePassphraseChange = (raw: string) => {
     setPassphrase(composingRef.current ? raw : filterToFormat(raw, format));
-  };
-  const handlePassphraseConfirmChange = (raw: string) => {
-    setPassphraseConfirm(composingRef.current ? raw : filterToFormat(raw, format));
   };
 
   const handleGenerate = useCallback(async () => {
@@ -86,7 +87,7 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
 
       const tooLong = isQRDataTooLong(qrUrl);
       const qrDataUrl = await generateQRCodeDataUrl(qrUrl);
-      const draft: CreateDraft = { message, passphrase, passphraseConfirm, hint, format, showLength, to, from };
+      const draft: CreateDraft = { message, passphrase, hint, format, showLength, to, from };
       onGenerated(qrDataUrl, qrUrl, encoded, tooLong, draft);
     } catch (e) {
       setError("QRコードの生成に失敗しました。メッセージを短くしてお試しください。");
@@ -94,12 +95,11 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
     } finally {
       setIsGenerating(false);
     }
-  }, [message, passphrase, passphraseConfirm, hint, format, showLength, to, from, isValid, isGenerating, onGenerated]);
+  }, [message, passphrase, hint, format, showLength, to, from, isValid, isGenerating, onGenerated]);
 
   const handleClear = () => {
     setMessage("");
     setPassphrase("");
-    setPassphraseConfirm("");
     setHint("");
     setFormat("指定なし");
     setShowLength(false);
@@ -113,13 +113,9 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
     ? "ひみつのメッセージを入力してください"
     : !passphrase
       ? "あいことばを入力してください"
-      : !passphraseConfirm
-        ? "あいことば（確認）を入力してください"
-        : passphrase !== passphraseConfirm
-          ? "あいことば（確認）が一致していません"
-          : "";
+      : "";
   const showNextStep = !isValid && !isGenerating && nextStep !== "" &&
-    (message !== "" || passphrase !== "" || passphraseConfirm !== "");
+    (message !== "" || passphrase !== "");
 
   return (
     <div className="screen create-screen">
@@ -174,27 +170,33 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
           <span className="step-title">あいことばで封をする</span>
         </div>
 
-        {/* 入力形式：あいことばを入力する前に決める */}
-        <div className="form-group">
-          <label htmlFor="format" className="form-label">
-            あいことばの入力形式（任意）
-          </label>
-          <select
-            id="format"
-            className="form-select"
-            value={format}
-            onChange={(e) => setFormat(e.target.value as InputFormat)}
-          >
-            {INPUT_FORMATS.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
-          <p className="form-note">
-            ふつうは「指定なし」のままでOK。選んだ形式に合った文字だけ入力でき、受け取った人にも表示されます。
-          </p>
-        </div>
+        {/* 入力形式：あいことばより前に置く（変更すると入力済みの文字を間引くため）。
+            初見の人には不要な概念なので、折りたたみに収めている */}
+        <details
+          className="advanced-settings"
+          open={formatOpen}
+          onToggle={(e) => setFormatOpen(e.currentTarget.open)}
+        >
+          <summary>あいことばの形式を指定する（こだわり設定）</summary>
+          <div className="form-group advanced-settings-body">
+            <select
+              id="format"
+              className="form-select"
+              value={format}
+              onChange={(e) => setFormat(e.target.value as InputFormat)}
+              aria-label="あいことばの入力形式"
+            >
+              {INPUT_FORMATS.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
+            <p className="form-note">
+              選んだ形式に合った文字だけ入力でき、受け取った人にも表示されます。
+            </p>
+          </div>
+        </details>
 
         <div className="form-group">
           <label htmlFor="passphrase" className="form-label">
@@ -223,55 +225,14 @@ export function CreateSecretQR({ onGenerated, initialDraft }: Props) {
               type="button"
               className="toggle-visibility"
               onClick={() => setShowPassphrase(!showPassphrase)}
-              aria-label={showPassphrase ? "非表示にする" : "表示する"}
+              aria-label={showPassphrase ? "あいことばを隠す" : "あいことばを表示する"}
             >
-              {showPassphrase ? "🙈" : "👁"}
+              {showPassphrase ? "👁" : "🙈"}
             </button>
           </div>
           <p className="form-note">
-            ふたりだけが知っている言葉が、メッセージを開ける鍵になります。
+            ふたりだけが知っている言葉に。例：ペットの名前、記念日、初めて行った場所。
           </p>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="passphrase-confirm" className="form-label">
-            あいことば（確認）
-          </label>
-          <div className="input-with-toggle">
-            <input
-              id="passphrase-confirm"
-              type="text"
-              inputMode={inputMode}
-              className={`form-input${showPassphraseConfirm ? "" : " form-input-masked"}`}
-              placeholder="もう一度入力してください"
-              value={passphraseConfirm}
-              onChange={(e) => handlePassphraseConfirmChange(e.target.value)}
-              onCompositionStart={() => { composingRef.current = true; }}
-              onCompositionEnd={(e) => {
-                composingRef.current = false;
-                setPassphraseConfirm(filterToFormat(e.currentTarget.value, format));
-              }}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck={false}
-              aria-describedby="passphrase-confirm-status"
-            />
-            <button
-              type="button"
-              className="toggle-visibility"
-              onClick={() => setShowPassphraseConfirm(!showPassphraseConfirm)}
-              aria-label={showPassphraseConfirm ? "非表示にする" : "表示する"}
-            >
-              {showPassphraseConfirm ? "🙈" : "👁"}
-            </button>
-          </div>
-          {passphrase && passphraseConfirm && passphrase !== passphraseConfirm && (
-            <p id="passphrase-confirm-status" className="field-error" role="alert">あいことばが一致しません</p>
-          )}
-          {passphrase && passphraseConfirm && passphrase === passphraseConfirm && (
-            <p id="passphrase-confirm-status" className="field-success">一致しています</p>
-          )}
         </div>
 
         <StrengthMeter

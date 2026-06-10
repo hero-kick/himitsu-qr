@@ -221,6 +221,46 @@ body {
   margin: 0 0 20px;
 }
 
+/* --- こだわり設定（折りたたみ） --- */
+.advanced-settings {
+  margin-bottom: 18px;
+}
+
+.advanced-settings summary {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  padding: 4px 0;
+  list-style: none;
+  transition: color var(--transition-fast);
+}
+
+.advanced-settings summary::-webkit-details-marker {
+  display: none;
+}
+
+.advanced-settings summary::before {
+  content: "▸ ";
+  color: var(--color-text-muted);
+}
+
+.advanced-settings[open] summary::before {
+  content: "▾ ";
+}
+
+.advanced-settings summary:hover {
+  color: var(--color-text);
+}
+
+.advanced-settings-body {
+  margin-top: 10px;
+  margin-bottom: 4px;
+  animation: fadeSlideIn var(--transition-normal) ease-out;
+}
+
 /* --- Tab Bar --- */
 .tab-bar {
   display: flex;

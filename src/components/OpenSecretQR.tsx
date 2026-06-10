@@ -57,7 +57,9 @@ function Confetti() {
 
 export function OpenSecretQR({ payload, onGoHome, onReply }: Props) {
   const [passphrase, setPassphrase] = useState("");
-  const [showPassphrase, setShowPassphrase] = useState(false);
+  // 最初から表示する：受け取った人は自分しか画面を見ていないことがほとんどで、
+  // 伏せ字は「打ち間違いで開かない」というつまずきの方を生みやすい
+  const [showPassphrase, setShowPassphrase] = useState(true);
   const [phase, setPhase] = useState<Phase>("input");
   const [decryptedMessage, setDecryptedMessage] = useState("");
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
@@ -233,9 +235,9 @@ export function OpenSecretQR({ payload, onGoHome, onReply }: Props) {
               type="button"
               className="toggle-visibility"
               onClick={() => setShowPassphrase(!showPassphrase)}
-              aria-label={showPassphrase ? "非表示にする" : "表示する"}
+              aria-label={showPassphrase ? "あいことばを隠す" : "あいことばを表示する"}
             >
-              {showPassphrase ? "🙈" : "👁"}
+              {showPassphrase ? "👁" : "🙈"}
             </button>
           </div>
         </div>

@@ -65,55 +65,50 @@ describe("doesHintContainAnswer", () => {
 
 describe("validateInputs", () => {
   it("メッセージが空なら error", () => {
-    const warnings = validateInputs("", "pass", "pass", "", "指定なし");
+    const warnings = validateInputs("", "pass", "", "指定なし");
     expect(warnings.some((w) => w.type === "error")).toBe(true);
   });
 
   it("あいことばが空なら error", () => {
-    const warnings = validateInputs("msg", "", "", "", "指定なし");
+    const warnings = validateInputs("msg", "", "", "指定なし");
     expect(warnings.some((w) => w.type === "error")).toBe(true);
   });
 
-  it("確認が一致しなければ error", () => {
-    const warnings = validateInputs("msg", "pass1", "pass2", "", "指定なし");
-    expect(warnings.some((w) => w.type === "error" && w.message.includes("一致"))).toBe(true);
-  });
-
   it("バリデーション通過時は error なし", () => {
-    const warnings = validateInputs("メッセージ", "カフェルナテスト", "カフェルナテスト", "ヒント", "指定なし");
+    const warnings = validateInputs("メッセージ", "カフェルナテスト", "ヒント", "指定なし");
     expect(warnings.filter((w) => w.type === "error")).toHaveLength(0);
   });
 
   it("入力形式に合わない文字があれば error", () => {
-    const warnings = validateInputs("msg", "abc123", "abc123", "", "数字のみ");
+    const warnings = validateInputs("msg", "abc123", "", "数字のみ");
     expect(warnings.some((w) => w.type === "error" && w.message.includes("以外の文字"))).toBe(true);
   });
 
   it("入力形式に合致していれば形式エラーなし", () => {
-    const warnings = validateInputs("msg", "12345678", "12345678", "", "数字のみ");
+    const warnings = validateInputs("msg", "12345678", "", "数字のみ");
     expect(warnings.some((w) => w.message.includes("以外の文字"))).toBe(false);
   });
 });
 
 describe("canCreate", () => {
   it("全条件満たせば true", () => {
-    expect(canCreate("msg", "pass", "pass", "指定なし")).toBe(true);
+    expect(canCreate("msg", "pass", "指定なし")).toBe(true);
   });
 
   it("メッセージが空なら false", () => {
-    expect(canCreate("", "pass", "pass", "指定なし")).toBe(false);
+    expect(canCreate("", "pass", "指定なし")).toBe(false);
   });
 
-  it("確認不一致なら false", () => {
-    expect(canCreate("msg", "pass", "wrong", "指定なし")).toBe(false);
+  it("あいことばが空なら false", () => {
+    expect(canCreate("msg", "", "指定なし")).toBe(false);
   });
 
   it("入力形式に合わなければ false", () => {
-    expect(canCreate("msg", "abc", "abc", "数字のみ")).toBe(false);
+    expect(canCreate("msg", "abc", "数字のみ")).toBe(false);
   });
 
   it("入力形式に合致すれば true", () => {
-    expect(canCreate("msg", "12345", "12345", "数字のみ")).toBe(true);
+    expect(canCreate("msg", "12345", "数字のみ")).toBe(true);
   });
 });
 

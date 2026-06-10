@@ -100,7 +100,6 @@ export function doesHintContainAnswer(
 export function validateInputs(
   message: string,
   passphrase: string,
-  passphraseConfirm: string,
   hint: string,
   format: InputFormat
 ): ValidationWarning[] {
@@ -108,7 +107,7 @@ export function validateInputs(
   const len = [...passphrase].length;
 
   if (!message.trim()) {
-    warnings.push({ type: "error", message: "秘密のメッセージを入力してください" });
+    warnings.push({ type: "error", message: "ひみつのメッセージを入力してください" });
   }
 
   if (!passphrase) {
@@ -121,14 +120,6 @@ export function validateInputs(
       type: "error",
       message: `あいことばに「${format}」以外の文字が含まれています`,
     });
-  }
-
-  if (passphrase && passphraseConfirm && passphrase !== passphraseConfirm) {
-    warnings.push({ type: "error", message: "あいことばが一致しません" });
-  }
-
-  if (passphrase && !passphraseConfirm) {
-    warnings.push({ type: "error", message: "あいことば（確認）を入力してください" });
   }
 
   if (passphrase && len < 4) {
@@ -164,13 +155,11 @@ export function validateInputs(
 export function canCreate(
   message: string,
   passphrase: string,
-  passphraseConfirm: string,
   format: InputFormat
 ): boolean {
   return (
     message.trim().length > 0 &&
     passphrase.length > 0 &&
-    passphrase === passphraseConfirm &&
     matchesFormat(passphrase, format)
   );
 }
